@@ -7,22 +7,23 @@
 <style>
   body { font-family: Arial, sans-serif; background: #eef2f3; margin: 0; padding: 0; }
   header { background: #4a90e2; color: white; padding: 10px; text-align: center; }
-  .container { display: flex; }
-  #map { height: 500px; width: 50%; }
-  .locations { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; overflow-y: auto; }
-  .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px; padding: 10px; width: 320px; animation: fadeIn 0.5s ease-in-out; }
-  h2 { margin: 0 0 5px 0; }
-  .datetime { font-size: 0.9em; color: #555; margin-bottom: 10px; }
+  .locations { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
+  .weather-card { background: linear-gradient(145deg, #ffffff, #dff1ff); border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin: 10px; padding: 15px; width: 280px; transition: transform 0.2s; }
+  .weather-card:hover { transform: scale(1.03); }
+  h2 { margin: 0 0 5px 0; font-size: 1.2em; color: #333; }
+  .datetime { font-size: 0.85em; color: #555; margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; }
-  th, td { padding: 5px; text-align: center; }
-  @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+  th, td { padding: 5px; text-align: center; font-size: 0.85em; }
+  th { background: #4a90e2; color: white; border-radius: 4px; }
+  tr:nth-child(even) { background: rgba(0,0,0,0.03); }
+  #map { height: 500px; width: 100%; margin-top: 20px; border-top: 3px solid #4a90e2; }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
 <header>
-  <h1>Thời tiết 3 địa điểm</h1>
+  <h1>Thời tiết Việt Nam</h1>
   <label>Hiển thị dự báo: 
     <select id="daysSelect">
       <option value="7">7 ngày</option>
@@ -30,10 +31,8 @@
     </select>
   </label>
 </header>
-<div class="container">
-  <div id="map"></div>
-  <div class="locations" id="locations"></div>
-</div>
+<div class="locations" id="locations"></div>
+<div id="map"></div>
 <script>
 const fixedLocations = [
   {name: 'Đức Trọng – Lâm Đồng', lat: 11.7417, lon: 108.3733},
@@ -49,7 +48,7 @@ async function fetchWeather(lat, lon, days) {
 
 function renderWeather(location, data) {
   const card = document.createElement('div');
-  card.className = 'card';
+  card.className = 'weather-card';
   const now = new Date();
   const datetimeStr = now.toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' });
   let html = `<h2>${location.name}</h2><div class="datetime">${datetimeStr}</div>`;
@@ -88,6 +87,16 @@ function initMap() {
     const marker = L.marker([loc.lat, loc.lon]).addTo(map);
     marker.bindPopup(`<b>${loc.name}</b>`);
     marker.on('click', () => loadWeatherForLocation(loc));
+  });
+
+  map.on('click', async (e) => {
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+    const days = document.getElementById('daysSelect').value;
+    const data = await fetchWeather(lat, lon, days);
+    const customLoc = {name: `Vị trí (${lat.toFixed(2)}, ${lon.toFixed(2)})`, lat, lon};
+    document.getElementById('locations').innerHTML = '';
+    renderWeather(customLoc, data);
   });
 }
 
