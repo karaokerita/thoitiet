@@ -1,125 +1,66 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thời tiết hôm nay</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background: #0b1220; color: #eaf0ff; margin: 0; padding: 0; }
-    header { padding: 20px; background: #121a2a; text-align:center; }
-    h1 { margin:0; }
-    main { padding: 20px; display: grid; gap: 32px; }
-    .location-block { background: #121a2a; padding: 16px; border-radius: 6px; }
-    .loc-title { font-size: 20px; font-weight: bold; margin-bottom: 12px; color: #5fb3ff; }
-    .current { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
-    .temp { font-size: 40px; font-weight: bold; }
-    .emoji { font-size: 40px; }
-    .meta { font-size: 14px; color: #9db0d3; }
-    .daily { display: grid; grid-template-columns: repeat(auto-fill,minmax(110px,1fr)); gap: 12px; margin-top: 12px; }
-    .day { background: #1a2743; padding: 8px; border-radius: 6px; text-align: center; font-size: 12px; }
-    .day .t { font-size: 16px; font-weight: bold; }
-    select { padding: 6px; border-radius: 6px; margin-bottom: 8px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thời tiết Việt Nam</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #eef2f3; margin: 0; padding: 0; }
+  header { background: #4a90e2; color: white; padding: 10px; text-align: center; }
+  .locations { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px; padding: 10px; width: 300px; }
+  h2 { margin: 0 0 10px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 5px; text-align: center; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>🌤️ Thời tiết nhanh</h1>
-    <div>
-      <label>Hiển thị dự báo:</label>
-      <select id="daysSelect">
-        <option value="7">7 ngày</option>
-        <option value="14">14 ngày</option>
-      </select>
-    </div>
-  </header>
-
-  <main id="content"></main>
-
-  <footer style="text-align:center; padding: 10px; font-size: 12px; color: #9db0d3">
-    Dữ liệu: <a href="https://open-meteo.com/" target="_blank" style="color:#a7c9ff">Open-Meteo</a>
-  </footer>
-
+<header>
+  <h1>Thời tiết 3 địa điểm</h1>
+  <label>Hiển thị dự báo: 
+    <select id="daysSelect">
+      <option value="7">7 ngày</option>
+      <option value="14">14 ngày</option>
+    </select>
+  </label>
+</header>
+<div class="locations" id="locations"></div>
 <script>
-const wmo = {
-  0:['Trời quang','☀️'],1:['Gần như quang','🌤️'],2:['Nhiều mây','⛅'],3:['U ám','☁️'],
-  45:['Sương mù','🌫️'],48:['Sương bám','🌫️'],
-  51:['Mưa phùn nhẹ','🌦️'],53:['Mưa phùn vừa','🌦️'],55:['Mưa phùn to','🌧️'],
-  61:['Mưa nhẹ','🌦️'],63:['Mưa vừa','🌧️'],65:['Mưa to','🌧️'],
-  71:['Tuyết nhẹ','🌨️'],73:['Tuyết vừa','🌨️'],75:['Tuyết to','❄️'],
-  80:['Mưa rào nhẹ','🌦️'],81:['Mưa rào vừa','🌧️'],82:['Mưa rào lớn','⛈️'],
-  95:['Dông','⛈️']
-};
-
-const locations = [
-  { name: 'Đức Trọng - Lâm Đồng', query: 'Duc Trong, Lam Dong' },
-  { name: 'Tân An - Long An', query: 'Tan An, Long An' },
-  { name: 'TP. Hồ Chí Minh', query: 'Ho Chi Minh' }
+const fixedLocations = [
+  {name: 'Đức Trọng – Lâm Đồng', lat: 11.7417, lon: 108.3733},
+  {name: 'Tân An – Long An', lat: 10.5359, lon: 106.4133},
+  {name: 'TP. Hồ Chí Minh', lat: 10.7769, lon: 106.7009}
 ];
 
-const content = document.getElementById('content');
-const daysSelect = document.getElementById('daysSelect');
-
-function fmtDate(iso){
-  const d = new Date(iso);
-  return d.toLocaleDateString('vi-VN', { weekday:'short', day:'2-digit', month:'2-digit' });
+async function fetchWeather(lat, lon, days) {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=${days}`;
+  const res = await fetch(url);
+  return res.json();
 }
 
-async function geocode(name){
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=vi&format=json`;
-  const r = await fetch(url);
-  const j = await r.json();
-  return j.results && j.results.length ? j.results[0] : null;
-}
-
-async function forecast(lat, lon, days){
-  const base = 'https://api.open-meteo.com/v1/forecast';
-  const params = new URLSearchParams({
-    latitude: lat, longitude: lon,
-    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation',
-    daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum',
-    forecast_days: days,
-    timezone: 'auto'
+function renderWeather(location, data) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  let html = `<h2>${location.name}</h2><table><tr><th>Ngày</th><th>Cao</th><th>Thấp</th><th>Mưa (mm)</th></tr>`;
+  data.daily.time.forEach((date, i) => {
+    html += `<tr><td>${date}</td><td>${data.daily.temperature_2m_max[i]}°C</td><td>${data.daily.temperature_2m_min[i]}°C</td><td>${data.daily.precipitation_sum[i]}</td></tr>`;
   });
-  const r = await fetch(`${base}?${params}`);
-  return await r.json();
+  html += `</table>`;
+  card.innerHTML = html;
+  document.getElementById('locations').appendChild(card);
 }
 
-function renderLocationBlock(label, data){
-  const c = data.current;
-  const [text, emoji] = wmo[c.weather_code] || ['Không rõ','🌀'];
-  const dailyHTML = data.daily.time.map((t, i) => {
-    const [dtxt, e] = wmo[data.daily.weather_code[i]] || ['—','🌀'];
-    return `<div class="day"><div>${fmtDate(t)}</div><div style="font-size:20px">${e}</div><div class="t">${Math.round(data.daily.temperature_2m_max[i])}° / ${Math.round(data.daily.temperature_2m_min[i])}°</div><div>${dtxt}</div><div>Mưa: ${Math.round(data.daily.precipitation_sum[i]||0)} mm</div></div>`;
-  }).join('');
-
-  return `<div class="location-block">
-    <div class="loc-title">${label}</div>
-    <div class="current">
-      <div class="temp">${Math.round(c.temperature_2m)}°C</div>
-      <div class="emoji">${emoji}</div>
-      <div>${text}</div>
-    </div>
-    <div class="meta">Độ ẩm: ${c.relative_humidity_2m}% | Gió: ${Math.round(c.wind_speed_10m)} km/h | Mưa: ${c.precipitation || 0} mm</div>
-    <div class="daily">${dailyHTML}</div>
-  </div>`;
-}
-
-async function loadAll(){
-  content.innerHTML = 'Đang tải...';
-  const days = parseInt(daysSelect.value);
-  const blocks = [];
-  for(const loc of locations){
-    const g = await geocode(loc.query);
-    if(!g) continue;
-    const data = await forecast(g.latitude, g.longitude, days);
-    blocks.push(renderLocationBlock(loc.name, data));
+async function loadAll() {
+  document.getElementById('locations').innerHTML = '';
+  const days = document.getElementById('daysSelect').value;
+  for (const loc of fixedLocations) {
+    const data = await fetchWeather(loc.lat, loc.lon, days);
+    renderWeather(loc, data);
   }
-  content.innerHTML = blocks.join('');
 }
 
-daysSelect.addEventListener('change', loadAll);
-
-loadAll();
+document.getElementById('daysSelect').addEventListener('change', loadAll);
+window.onload = loadAll;
 </script>
 </body>
 </html>
