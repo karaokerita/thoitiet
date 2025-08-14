@@ -3,231 +3,188 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thời tiết Việt Nam</title>
+<title>Thời tiết kiểu iOS</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <style>
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: url('background.jpg') no-repeat center center fixed;
     background-size: cover;
-    color: white;
+    color: #fff;
   }
   header {
     position: sticky;
     top: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0,0,0,0.3);
     padding: 10px;
     text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    backdrop-filter: blur(10px);
     z-index: 1000;
   }
-  header h1 {
-    margin: 0;
-    font-size: 24px;
-  }
-  #clock {
-    font-size: 14px;
-    margin-top: 4px;
-    opacity: 0.9;
-  }
-  .weather-section {
+  .locations {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 15px;
     padding: 10px;
   }
-  .location-block {
-    background: rgba(255, 255, 255, 0.15);
+  .location {
+    background: rgba(255,255,255,0.3);
     border-radius: 12px;
-    overflow: hidden;
     padding: 10px;
     backdrop-filter: blur(8px);
   }
-  .location-title {
+  .location h2 {
+    margin: 0;
     font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 8px;
+  }
+  .days {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
   }
   .day {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(200, 200, 200, 0.15);
-    margin: 4px 0;
+    border-radius: 10px;
     padding: 8px;
+    background: rgba(255,255,255,0.2);
+  }
+  .day.today {
+    background: rgba(255,255,255,0.4);
+    font-weight: bold;
+  }
+  .temp-low { color: #00f; }
+  .temp-high { color: #f00; }
+  .rain { color: #000; display: flex; align-items: center; gap: 4px; }
+  .icon { width: 30px; height: 30px; }
+  #date-picker {
+    margin: 10px auto;
+    display: block;
+    padding: 5px;
     border-radius: 8px;
-  }
-  .day:nth-child(odd) {
-    background: rgba(200, 200, 200, 0.2);
-  }
-  .day-info {
-    flex: 1;
-  }
-  .temp-high {
-    color: red;
-    font-weight: bold;
-  }
-  .temp-low {
-    color: #00BFFF;
-    font-weight: bold;
-  }
-  canvas {
-    width: 40px;
-    height: 40px;
-  }
-  .map-container {
-    height: 400px;
-    margin-top: 20px;
+    border: none;
   }
   #map {
-    width: 100%;
-    height: 100%;
-  }
-  #map-weather {
-    position: absolute;
-    background: rgba(0,0,0,0.6);
-    padding: 8px;
-    border-radius: 8px;
-    color: white;
-    font-size: 14px;
-    max-width: 200px;
-    display: none;
-    pointer-events: none;
-    z-index: 2000;
+    height: 300px;
+    margin-top: 10px;
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Thời tiết Việt Nam</h1>
-  <div id="clock"></div>
+  Thời tiết 3 vị trí cố định<br>
+  <small id="current-time"></small>
 </header>
 
-<div class="weather-section" id="preset-locations">
-  <!-- Thời tiết 3 vị trí cố định sẽ được chèn ở đây -->
-</div>
+<input type="date" id="date-picker">
 
-<div class="map-container">
-  <div id="map"></div>
-  <div id="map-weather"></div>
-</div>
+<div class="locations" id="locations"></div>
 
-<!-- Skycons -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/skycons/1396634940/skycons.js"></script>
-<!-- Leaflet Map -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<div id="map"></div>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 <script>
-const presetLocations = [
-  { name: "Đức Trọng – Lâm Đồng", lat: 11.7402, lon: 108.3630 },
-  { name: "Tân An – Long An", lat: 10.5352, lon: 106.4136 },
-  { name: "TP. Hồ Chí Minh", lat: 10.7769, lon: 106.7009 }
+const fixedLocations = [
+  { name: "Đức Trọng – Lâm Đồng", lat: 11.7407, lon: 108.3705, color: "rgba(255,255,255,0.3)" },
+  { name: "Tân An – Long An", lat: 10.5359, lon: 106.4137, color: "rgba(255,255,255,0.25)" },
+  { name: "TP. Hồ Chí Minh", lat: 10.7769, lon: 106.7009, color: "rgba(255,255,255,0.2)" }
 ];
 
-// Hàm lấy giờ thực tế
-function updateClock() {
-  const now = new Date();
-  document.getElementById("clock").innerText =
-    now.toLocaleDateString("vi-VN", { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' }) +
-    " " + now.toLocaleTimeString("vi-VN");
+function updateClock(){
+  document.getElementById('current-time').textContent =
+    new Date().toLocaleString('vi-VN');
 }
-setInterval(updateClock, 1000);
+setInterval(updateClock,1000);
 updateClock();
 
-// Hàm tạo icon động
-const skycons = new Skycons({ "color": "white" });
-function getSkycon(icon) {
-  const map = {
-    "clear-day": "CLEAR_DAY",
-    "clear-night": "CLEAR_NIGHT",
-    "rain": "RAIN",
-    "snow": "SNOW",
-    "sleet": "SLEET",
-    "wind": "WIND",
-    "fog": "FOG",
-    "cloudy": "CLOUDY",
-    "partly-cloudy-day": "PARTLY_CLOUDY_DAY",
-    "partly-cloudy-night": "PARTLY_CLOUDY_NIGHT"
-  };
-  return map[icon] || "CLOUDY";
+function getIcon(condition){
+  if(condition.includes("rain")) return "🌧️";
+  if(condition.includes("cloud")) return "☁️";
+  return "☀️";
 }
 
-// Hàm lấy dữ liệu thời tiết 7 ngày (giả lập demo)
-async function fetchWeather(lat, lon) {
-  // Demo dùng dữ liệu giả
+function getWeatherData(lat, lon){
+  // DEMO DATA (random) vì không dùng API key
   let days = [];
-  const today = new Date();
-  for (let i = -3; i <= 3; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
+  for(let i=-2;i<=2;i++){
+    const date = new Date();
+    date.setDate(date.getDate() + i);
     days.push({
       date: date,
-      icon: "partly-cloudy-day",
-      high: Math.floor(Math.random() * 7) + 28,
-      low: Math.floor(Math.random() * 7) + 20,
-      rainProb: Math.floor(Math.random() * 100)
+      low: Math.floor(Math.random()*5)+20,
+      high: Math.floor(Math.random()*5)+30,
+      rainChance: Math.floor(Math.random()*80),
+      condition: ["sun","cloud","rain"][Math.floor(Math.random()*3)]
     });
   }
   return days;
 }
 
-// Render 3 vị trí cố định
-async function renderPresetLocations() {
-  const container = document.getElementById("preset-locations");
-  for (let loc of presetLocations) {
-    const days = await fetchWeather(loc.lat, loc.lon);
-    const locBlock = document.createElement("div");
-    locBlock.className = "location-block";
-    locBlock.innerHTML = `<div class="location-title">${loc.name}</div>`;
-    days.forEach((day, idx) => {
+function renderLocations(dateSelected){
+  const container = document.getElementById("locations");
+  container.innerHTML = "";
+  fixedLocations.forEach((loc) => {
+    const locDiv = document.createElement("div");
+    locDiv.className = "location";
+    locDiv.style.background = loc.color;
+    locDiv.innerHTML = `<h2>${loc.name}</h2>`;
+    const daysDiv = document.createElement("div");
+    daysDiv.className = "days";
+    const data = getWeatherData(loc.lat, loc.lon);
+    data.forEach(d => {
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
-      const dayName = day.date.toLocaleDateString("vi-VN", { weekday: 'short', day: 'numeric', month: 'numeric' });
+      if(d.date.toDateString() === new Date().toDateString()){
+        dayDiv.classList.add("today");
+      }
       dayDiv.innerHTML = `
-        <div class="day-info">${dayName}</div>
-        <canvas id="icon-${loc.name}-${idx}"></canvas>
-        <div><span class="temp-high">${day.high}°</span> / <span class="temp-low">${day.low}°</span></div>
-        <div>💧 ${day.rainProb}%</div>
+        <span>${d.date.toLocaleDateString('vi-VN', {weekday:'short', day:'2-digit', month:'2-digit'})}</span>
+        <img class="icon" src="" alt="${d.condition}">${getIcon(d.condition)}
+        <span class="temp-low">${d.low}°</span>
+        <span class="temp-high">${d.high}°</span>
+        <span class="rain">💧${d.rainChance}%</span>
       `;
-      locBlock.appendChild(dayDiv);
-      skycons.add(`icon-${loc.name}-${idx}`, Skycons[getSkycon(day.icon)]);
+      daysDiv.appendChild(dayDiv);
     });
-    container.appendChild(locBlock);
-  }
-  skycons.play();
+    locDiv.appendChild(daysDiv);
+    container.appendChild(locDiv);
+  });
 }
-renderPresetLocations();
 
-// Tạo bản đồ
-const map = L.map('map').setView([16.047079, 108.206230], 5);
+renderLocations(new Date());
+
+document.getElementById("date-picker").addEventListener("change", e=>{
+  renderLocations(new Date(e.target.value));
+});
+
+// Map
+const map = L.map('map').setView([11.7407, 108.3705], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-map.on('click', async function(e) {
+let clickMarker;
+map.on('click', async function(e){
+  if(clickMarker) map.removeLayer(clickMarker);
   const lat = e.latlng.lat;
   const lon = e.latlng.lng;
-  const mapWeatherDiv = document.getElementById("map-weather");
-
-  // Lấy tên địa điểm từ Nominatim
-  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=vi`);
-  const data = await res.json();
-  const name = data.address.suburb || data.address.village || data.address.town || data.address.city_district || data.address.city || data.address.state || "Không rõ";
-
-  // Lấy dữ liệu thời tiết
-  const days = await fetchWeather(lat, lon);
-
-  let html = `<strong>${name}</strong><br>`;
-  days.forEach(day => {
-    const dayName = day.date.toLocaleDateString("vi-VN", { weekday: 'short', day: 'numeric', month: 'numeric' });
-    html += `${dayName}: ${day.high}°/${day.low}° 💧${day.rainProb}%<br>`;
-  });
-
-  mapWeatherDiv.style.left = e.containerPoint.x + "px";
-  mapWeatherDiv.style.top = e.containerPoint.y + "px";
-  mapWeatherDiv.innerHTML = html;
-  mapWeatherDiv.style.display = "block";
+  let placeName = "Vị trí đã chọn";
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+    const data = await res.json();
+    if(data.address){
+      const ward = data.address.suburb || data.address.village || data.address.town || "";
+      const prov = data.address.state || data.address.city || "";
+      placeName = `${ward} – ${prov}`;
+    }
+  } catch{}
+  clickMarker = L.marker([lat, lon]).addTo(map).bindPopup(`<b>${placeName}</b><br>${Math.floor(Math.random()*5)+20}° / ${Math.floor(Math.random()*5)+30}°, 💧${Math.floor(Math.random()*80)}%`).openPopup();
 });
 </script>
 </body>
