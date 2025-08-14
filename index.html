@@ -16,6 +16,9 @@
     .overlay {
         background: rgba(0,0,0,0.4);
         padding: 10px;
+        position: sticky;
+        top: 0;
+        z-index: 999;
     }
     h1 {
         text-align: center;
@@ -31,6 +34,7 @@
         flex-wrap: wrap;
         justify-content: center;
         gap: 10px;
+        margin-top: 10px;
     }
     .location {
         background: rgba(255,255,255,0.8);
@@ -45,18 +49,14 @@
         margin: 0 0 10px;
     }
     .day-card {
-        background: rgba(255,255,255,0.9);
         border-radius: 8px;
         padding: 5px;
         margin: 5px 0;
         text-align: center;
+        color: #000;
     }
-    .temp-low {
-        color: blue;
-    }
-    .temp-high {
-        color: red;
-    }
+    .temp-low { color: blue; }
+    .temp-high { color: red; }
     #map {
         width: 100%;
         height: 60vh;
@@ -71,10 +71,12 @@
 <div class="overlay">
     <h1>Dự báo thời tiết</h1>
     <div id="clock"></div>
-    <div class="weather-container" id="weather-container">
-        <!-- 3 vị trí cố định -->
-    </div>
 </div>
+
+<div class="weather-container" id="weather-container">
+    <!-- 3 vị trí cố định -->
+</div>
+
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -85,7 +87,9 @@ const locations = [
     {name: "TP. Hồ Chí Minh", lat: 10.776, lon: 106.700}
 ];
 
-// Đồng hồ thời gian thực
+const brightColors = ["#FFD700", "#FF69B4", "#00FA9A", "#87CEFA", "#FFA07A", "#ADFF2F", "#FFB6C1"];
+
+// Đồng hồ
 function updateClock(){
     const now = new Date();
     document.getElementById('clock').innerText = 
@@ -94,60 +98,70 @@ function updateClock(){
 setInterval(updateClock, 1000);
 updateClock();
 
-// Lấy thời tiết cho vị trí
+// API thời tiết
 async function getWeather(lat, lon) {
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`);
     return res.json();
 }
 
-// Hiển thị thời tiết 3 vị trí cố định
+// Tạo thẻ thời tiết
+function createWeatherCard(name, data){
+    const div = document.createElement('div');
+    div.className = 'location';
+    div.innerHTML = `<h2>${name}</h2>`;
+    for (let i=0; i<7; i++){
+        const date = new Date(data.daily.time[i]);
+        const dayCard = document.createElement('div');
+        dayCard.className = 'day-card';
+        dayCard.style.background = brightColors[i % brightColors.length];
+        dayCard.innerHTML = `
+            <strong>${date.toLocaleDateString('vi-VN', {weekday:'short', day:'numeric', month:'numeric'})}</strong><br>
+            <span class="temp-low">${data.daily.temperature_2m_min[i]}°C</span> - 
+            <span class="temp-high">${data.daily.temperature_2m_max[i]}°C</span><br>
+            ☔ ${data.daily.precipitation_probability_max[i]}%
+        `;
+        div.appendChild(dayCard);
+    }
+    return div;
+}
+
+// Hiển thị 3 vị trí cố định
 async function loadWeather(){
     const container = document.getElementById('weather-container');
     container.innerHTML = '';
     for (let loc of locations){
         const data = await getWeather(loc.lat, loc.lon);
-        const div = document.createElement('div');
-        div.className = 'location';
-        div.innerHTML = `<h2>${loc.name}</h2>`;
-        for (let i=0; i<7; i++){
-            const date = new Date(data.daily.time[i]);
-            div.innerHTML += `
-                <div class="day-card">
-                    <strong>${date.toLocaleDateString('vi-VN', {weekday:'short', day:'numeric', month:'numeric'})}</strong><br>
-                    <span class="temp-low">${data.daily.temperature_2m_min[i]}°C</span> - 
-                    <span class="temp-high">${data.daily.temperature_2m_max[i]}°C</span><br>
-                    ☔ ${data.daily.precipitation_probability_max[i]}%
-                </div>`;
-        }
-        container.appendChild(div);
+        container.appendChild(createWeatherCard(loc.name, data));
     }
 }
 loadWeather();
 
-// Bản đồ Leaflet
+// Bản đồ
 const map = L.map('map').setView([11.735, 108.373], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
 
 // Marker 3 vị trí cố định
 locations.forEach(loc => {
     L.marker([loc.lat, loc.lon]).addTo(map).bindPopup(`<b>${loc.name}</b>`);
 });
 
-// Xử lý click/chạm trên bản đồ
-function onMapClick(e){
+// Click bản đồ: hiển thị thời tiết tại tỉnh thành
+async function onMapClick(e){
     const lat = e.latlng.lat;
     const lon = e.latlng.lng;
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
-    .then(res => res.json())
-    .then(info => {
-        const name = info.address?.state || info.address?.province || info.address?.county || "Không xác định";
-        L.popup()
-         .setLatLng(e.latlng)
-         .setContent(`<b>${name}</b><br>Lat: ${lat.toFixed(3)}, Lon: ${lon.toFixed(3)}`)
-         .openOn(map);
-    });
+    const info = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`).then(res => res.json());
+    const name = info.address?.state || info.address?.province || info.address?.county || "Không xác định";
+    const weatherData = await getWeather(lat, lon);
+
+    // Thêm popup
+    L.popup()
+     .setLatLng(e.latlng)
+     .setContent(`<b>${name}</b><br>Lat: ${lat.toFixed(3)}, Lon: ${lon.toFixed(3)}`)
+     .openOn(map);
+
+    // Thêm thẻ thời tiết vào danh sách
+    const container = document.getElementById('weather-container');
+    container.appendChild(createWeatherCard(name, weatherData));
 }
 map.on('click', onMapClick);
 map.on('touchend', function(e){
