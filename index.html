@@ -6,73 +6,23 @@
 <title>Thời tiết kiểu iOS</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <style>
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: url('background.jpg') no-repeat center center fixed;
-    background-size: cover;
-    color: #fff;
-  }
-  header {
-    position: sticky;
-    top: 0;
-    background: rgba(0,0,0,0.3);
-    padding: 10px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 20px;
-    backdrop-filter: blur(10px);
-    z-index: 1000;
-  }
-  .locations {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    padding: 10px;
-  }
-  .location {
-    background: rgba(255,255,255,0.3);
-    border-radius: 12px;
-    padding: 10px;
-    backdrop-filter: blur(8px);
-  }
-  .location h2 {
-    margin: 0;
-    font-size: 18px;
-  }
-  .days {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
-  }
-  .day {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 10px;
-    padding: 8px;
-    background: rgba(255,255,255,0.2);
-  }
-  .day.today {
-    background: rgba(255,255,255,0.4);
-    font-weight: bold;
-  }
-  .temp-low { color: #00f; }
-  .temp-high { color: #f00; }
-  .rain { color: #000; display: flex; align-items: center; gap: 4px; }
-  .icon { width: 30px; height: 30px; }
-  #date-picker {
-    margin: 10px auto;
-    display: block;
-    padding: 5px;
-    border-radius: 8px;
-    border: none;
-  }
-  #map {
-    height: 300px;
-    margin-top: 10px;
-  }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:url('background.jpg') no-repeat center center fixed; background-size:cover; color:#000; }
+  header { position:sticky; top:0; background:rgba(255,255,255,0.3); padding:10px; text-align:center;
+           font-weight:bold; font-size:20px; backdrop-filter:blur(10px); z-index:1000; }
+  .locations { display:flex; flex-direction:column; gap:15px; padding:10px; }
+  .location { background:rgba(255,255,255,0.3); border-radius:12px; padding:10px; backdrop-filter:blur(8px); }
+  .location h2 { margin:0; font-size:18px; color:#000; }
+  .days { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .day { display:flex; justify-content:space-between; align-items:center; border-radius:10px;
+         padding:8px; background: rgba(255,255,255,0.2); color:#000; }
+  .day.today { background: rgba(255,255,255,0.4); font-weight:bold; }
+  .temp-low { color:#00f; }
+  .temp-high { color:#f00; }
+  .rain { display:flex; align-items:center; gap:4px; color:#000; }
+  canvas.weather-icon { width:30px; height:30px; }
+  #date-picker { margin:10px auto; display:block; padding:5px; border-radius:8px; border:1px solid #ccc; color:#000; }
+  #map { height:300px; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -89,6 +39,7 @@
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/skycons/1396634940/skycons.js"></script>
 <script>
 const fixedLocations = [
   { name: "Đức Trọng – Lâm Đồng", lat: 11.7407, lon: 108.3705, color: "rgba(255,255,255,0.3)" },
@@ -96,95 +47,102 @@ const fixedLocations = [
   { name: "TP. Hồ Chí Minh", lat: 10.7769, lon: 106.7009, color: "rgba(255,255,255,0.2)" }
 ];
 
-function updateClock(){
-  document.getElementById('current-time').textContent =
-    new Date().toLocaleString('vi-VN');
-}
-setInterval(updateClock,1000);
-updateClock();
+// Đồng hồ
+function updateClock(){ document.getElementById('current-time').textContent = new Date().toLocaleString('vi-VN'); }
+setInterval(updateClock,1000); updateClock();
 
-function getIcon(condition){
-  if(condition.includes("rain")) return "🌧️";
-  if(condition.includes("cloud")) return "☁️";
-  return "☀️";
-}
-
-function getWeatherData(lat, lon){
-  // DEMO DATA (random) vì không dùng API key
-  let days = [];
-  for(let i=-2;i<=2;i++){
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    days.push({
-      date: date,
-      low: Math.floor(Math.random()*5)+20,
-      high: Math.floor(Math.random()*5)+30,
-      rainChance: Math.floor(Math.random()*80),
-      condition: ["sun","cloud","rain"][Math.floor(Math.random()*3)]
-    });
-  }
-  return days;
+// Mapping weathercode sang Skycons
+function getSkycon(code){
+  if([0].includes(code)) return "CLEAR_DAY";
+  if([1,2,3].includes(code)) return "PARTLY_CLOUDY_DAY";
+  if([61,63,65,80,81,82].includes(code)) return "RAIN";
+  return "CLOUDY";
 }
 
-function renderLocations(dateSelected){
+// Fetch dữ liệu thực
+async function fetchWeather(lat, lon){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto`;
+  const res = await fetch(url); return res.json();
+}
+
+// Render 3 vị trí
+async function renderLocations(selectedDate){
   const container = document.getElementById("locations");
   container.innerHTML = "";
-  fixedLocations.forEach((loc) => {
+  for(const loc of fixedLocations){
+    const data = await fetchWeather(loc.lat, loc.lon);
     const locDiv = document.createElement("div");
-    locDiv.className = "location";
-    locDiv.style.background = loc.color;
-    locDiv.innerHTML = `<h2>${loc.name}</h2>`;
-    const daysDiv = document.createElement("div");
-    daysDiv.className = "days";
-    const data = getWeatherData(loc.lat, loc.lon);
-    data.forEach(d => {
-      const dayDiv = document.createElement("div");
-      dayDiv.className = "day";
-      if(d.date.toDateString() === new Date().toDateString()){
-        dayDiv.classList.add("today");
+    locDiv.className="location"; locDiv.style.background=loc.color;
+    locDiv.innerHTML=`<h2>${loc.name}</h2>`;
+    const daysDiv=document.createElement("div"); daysDiv.className="days";
+    data.daily.time.forEach((d,i)=>{
+      const dateObj=new Date(d);
+      const diff=Math.floor((dateObj-selectedDate)/(1000*60*60*24));
+      if(diff>=-2 && diff<=2){
+        const dayDiv=document.createElement("div"); dayDiv.className="day";
+        if(dateObj.toDateString()===selectedDate.toDateString()) dayDiv.classList.add("today");
+        dayDiv.innerHTML=`
+          <span>${dateObj.toLocaleDateString('vi-VN',{weekday:'short', day:'2-digit', month:'2-digit'})}</span>
+          <canvas class="weather-icon" id="icon-${loc.name}-${i}"></canvas>
+          <span class="temp-low">${data.daily.temperature_2m_min[i]}°</span>
+          <span class="temp-high">${data.daily.temperature_2m_max[i]}°</span>
+          <span class="rain">💧${data.daily.precipitation_probability_max[i]}%</span>`;
+        daysDiv.appendChild(dayDiv);
+        // Khởi tạo Skycons
+        const skycons = new Skycons({"color":"black"});
+        skycons.add(`icon-${loc.name}-${i}`, Skycons[getSkycon(data.daily.weathercode[i])]);
+        skycons.play();
       }
-      dayDiv.innerHTML = `
-        <span>${d.date.toLocaleDateString('vi-VN', {weekday:'short', day:'2-digit', month:'2-digit'})}</span>
-        <img class="icon" src="" alt="${d.condition}">${getIcon(d.condition)}
-        <span class="temp-low">${d.low}°</span>
-        <span class="temp-high">${d.high}°</span>
-        <span class="rain">💧${d.rainChance}%</span>
-      `;
-      daysDiv.appendChild(dayDiv);
     });
     locDiv.appendChild(daysDiv);
     container.appendChild(locDiv);
-  });
+  }
 }
 
-renderLocations(new Date());
+// Ngày mặc định
+const today=new Date();
+document.getElementById("date-picker").valueAsDate=today;
+renderLocations(today);
 
+// Chọn ngày
 document.getElementById("date-picker").addEventListener("change", e=>{
   renderLocations(new Date(e.target.value));
 });
 
-// Map
-const map = L.map('map').setView([11.7407, 108.3705], 6);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
+// Bản đồ
+const map = L.map('map').setView([11.7407,108.3705],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 let clickMarker;
-map.on('click', async function(e){
+map.on('click',async function(e){
   if(clickMarker) map.removeLayer(clickMarker);
-  const lat = e.latlng.lat;
-  const lon = e.latlng.lng;
-  let placeName = "Vị trí đã chọn";
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-    const data = await res.json();
+  const lat=e.latlng.lat; const lon=e.latlng.lng;
+  let placeName="Vị trí đã chọn";
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+    const data=await res.json();
     if(data.address){
-      const ward = data.address.suburb || data.address.village || data.address.town || "";
-      const prov = data.address.state || data.address.city || "";
-      placeName = `${ward} – ${prov}`;
+      const ward=data.address.suburb||data.address.village||data.address.town||"";
+      const prov=data.address.state||data.address.city||"";
+      placeName=`${ward} – ${prov}`;
     }
-  } catch{}
-  clickMarker = L.marker([lat, lon]).addTo(map).bindPopup(`<b>${placeName}</b><br>${Math.floor(Math.random()*5)+20}° / ${Math.floor(Math.random()*5)+30}°, 💧${Math.floor(Math.random()*80)}%`).openPopup();
+  }catch{}
+  const weather=await fetchWeather(lat, lon);
+  const popupHTML=weather.daily.time.slice(0,5).map((d,i)=>{
+    const dateObj=new Date(d);
+    return `<div>${dateObj.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit'})} <canvas class="weather-icon" id="map-icon-${i}"></canvas> ${weather.daily.temperature_2m_min[i]}°/${weather.daily.temperature_2m_max[i]}° 💧${weather.daily.precipitation_probability_max[i]}%</div>`;
+  }).join('');
+  clickMarker=L.marker([lat,lon]).addTo(map).bindPopup(`<b>${placeName}</b><br>${popupHTML}`).openPopup();
+  // Khởi tạo icon Skycons trên popup
+  setTimeout(()=>{
+    weather.daily.weathercode.slice(0,5).forEach((code,i)=>{
+      const skycons=new Skycons({"color":"black"});
+      skycons.add(`map-icon-${i}`,Skycons[getSkycon(code)]);
+      skycons.play();
+    });
+  },300);
 });
 </script>
 </body>
