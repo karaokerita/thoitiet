@@ -8,7 +8,7 @@
   body { font-family: Arial, sans-serif; background: #eef2f3; margin: 0; padding: 0; }
   header { background: #4a90e2; color: white; padding: 10px; text-align: center; }
   .locations { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
-  .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px; padding: 10px; width: 300px; }
+  .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px; padding: 10px; width: 320px; }
   h2 { margin: 0 0 5px 0; }
   .datetime { font-size: 0.9em; color: #555; margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; }
@@ -34,7 +34,7 @@ const fixedLocations = [
 ];
 
 async function fetchWeather(lat, lon, days) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&forecast_days=${days}`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=${days}`;
   const res = await fetch(url);
   return res.json();
 }
@@ -45,9 +45,9 @@ function renderWeather(location, data) {
   const now = new Date();
   const datetimeStr = now.toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' });
   let html = `<h2>${location.name}</h2><div class="datetime">${datetimeStr}</div>`;
-  html += `<table><tr><th>Ngày</th><th>Cao</th><th>Thấp</th><th>Mưa (mm)</th></tr>`;
+  html += `<table><tr><th>Ngày</th><th>Cao</th><th>Thấp</th><th>Mưa (mm)</th><th>Khả năng mưa (%)</th></tr>`;
   data.daily.time.forEach((date, i) => {
-    html += `<tr><td>${date}</td><td>${data.daily.temperature_2m_max[i]}°C</td><td>${data.daily.temperature_2m_min[i]}°C</td><td>${data.daily.precipitation_sum[i]}</td></tr>`;
+    html += `<tr><td>${date}</td><td>${data.daily.temperature_2m_max[i]}°C</td><td>${data.daily.temperature_2m_min[i]}°C</td><td>${data.daily.precipitation_sum[i]}</td><td>${data.daily.precipitation_probability_max[i] ?? '-'}%</td></tr>`;
   });
   html += `</table>`;
   card.innerHTML = html;
