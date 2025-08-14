@@ -5,17 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Thời tiết Việt Nam</title>
 <style>
-  body { font-family: Arial, sans-serif; background: #eef2f3; margin: 0; padding: 0; }
-  header { background: #4a90e2; color: white; padding: 10px; text-align: center; }
+  body { font-family: Arial, sans-serif; background: url('background.jpg') no-repeat center center fixed; background-size: cover; margin: 0; padding: 0; }
+  header { background: rgba(74, 144, 226, 0.85); color: white; padding: 10px; text-align: center; }
+  .search { margin: 10px; text-align: center; }
+  .search input { padding: 5px; width: 250px; }
   .locations { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
-  .weather-card { background: linear-gradient(145deg, #ffffff, #dff1ff); border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin: 10px; padding: 15px; width: 280px; transition: transform 0.2s; }
+  .weather-card { border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin: 10px; padding: 15px; width: 280px; transition: transform 0.2s; color: #333; }
   .weather-card:hover { transform: scale(1.03); }
-  h2 { margin: 0 0 5px 0; font-size: 1.2em; color: #333; }
-  .datetime { font-size: 0.85em; color: #555; margin-bottom: 10px; }
+  h2 { margin: 0 0 5px 0; font-size: 1.2em; }
+  .datetime { font-size: 0.85em; margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; }
   th, td { padding: 5px; text-align: center; font-size: 0.85em; }
-  th { background: #4a90e2; color: white; border-radius: 4px; }
-  tr:nth-child(even) { background: rgba(0,0,0,0.03); }
+  th { background: rgba(74,144,226,0.85); color: white; border-radius: 4px; }
+  .temp-high { color: red; font-weight: bold; }
+  .temp-low { color: blue; font-weight: bold; }
+  tr:nth-child(even) { background: rgba(255,255,255,0.5); }
   #map { height: 500px; width: 100%; margin-top: 20px; border-top: 3px solid #4a90e2; }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -31,17 +35,21 @@
     </select>
   </label>
 </header>
+<div class="search">
+  <input type="text" id="searchBox" placeholder="Nhập địa điểm..." />
+  <button onclick="searchLocation()">Tìm</button>
+</div>
 <div class="locations" id="locations"></div>
 <div id="map"></div>
 <script>
 const fixedLocations = [
-  {name: 'Đức Trọng – Lâm Đồng', lat: 11.7417, lon: 108.3733},
-  {name: 'Tân An – Long An', lat: 10.5359, lon: 106.4133},
-  {name: 'TP. Hồ Chí Minh', lat: 10.7769, lon: 106.7009}
+  {name: 'Đức Trọng – Lâm Đồng', lat: 11.7417, lon: 108.3733, color: '#ffdddd'},
+  {name: 'Tân An – Long An', lat: 10.5359, lon: 106.4133, color: '#ddffdd'},
+  {name: 'TP. Hồ Chí Minh', lat: 10.7769, lon: 106.7009, color: '#ddddff'}
 ];
 
 async function fetchWeather(lat, lon, days) {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=${days}`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=${days}`;
   const res = await fetch(url);
   return res.json();
 }
@@ -49,23 +57,18 @@ async function fetchWeather(lat, lon, days) {
 function renderWeather(location, data) {
   const card = document.createElement('div');
   card.className = 'weather-card';
+  card.style.background = location.color || 'rgba(255,255,255,0.8)';
   const now = new Date();
   const datetimeStr = now.toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' });
   let html = `<h2>${location.name}</h2><div class="datetime">${datetimeStr}</div>`;
-  html += `<table><tr><th>Ngày</th><th>Cao</th><th>Thấp</th><th>Mưa (mm)</th><th>Khả năng mưa (%)</th></tr>`;
+  html += `<table><tr><th>Thứ</th><th>Cao</th><th>Thấp</th></tr>`;
   data.daily.time.forEach((date, i) => {
-    html += `<tr><td>${date}</td><td>${data.daily.temperature_2m_max[i]}°C</td><td>${data.daily.temperature_2m_min[i]}°C</td><td>${data.daily.precipitation_sum[i]}</td><td>${data.daily.precipitation_probability_max[i] ?? '-'}%</td></tr>`;
+    const dayName = new Date(date).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    html += `<tr><td>${dayName}</td><td class="temp-high">${data.daily.temperature_2m_max[i]}°C</td><td class="temp-low">${data.daily.temperature_2m_min[i]}°C</td></tr>`;
   });
   html += `</table>`;
   card.innerHTML = html;
   document.getElementById('locations').appendChild(card);
-}
-
-async function loadWeatherForLocation(loc) {
-  const days = document.getElementById('daysSelect').value;
-  const data = await fetchWeather(loc.lat, loc.lon, days);
-  document.getElementById('locations').innerHTML = '';
-  renderWeather(loc, data);
 }
 
 async function loadAll() {
@@ -84,9 +87,7 @@ function initMap() {
   }).addTo(map);
 
   fixedLocations.forEach(loc => {
-    const marker = L.marker([loc.lat, loc.lon]).addTo(map);
-    marker.bindPopup(`<b>${loc.name}</b>`);
-    marker.on('click', () => loadWeatherForLocation(loc));
+    L.marker([loc.lat, loc.lon]).addTo(map).bindPopup(`<b>${loc.name}</b>`);
   });
 
   map.on('click', async (e) => {
@@ -94,10 +95,26 @@ function initMap() {
     const lon = e.latlng.lng;
     const days = document.getElementById('daysSelect').value;
     const data = await fetchWeather(lat, lon, days);
-    const customLoc = {name: `Vị trí (${lat.toFixed(2)}, ${lon.toFixed(2)})`, lat, lon};
-    document.getElementById('locations').innerHTML = '';
-    renderWeather(customLoc, data);
+    L.popup()
+      .setLatLng(e.latlng)
+      .setContent(`<b>Vị trí (${lat.toFixed(2)}, ${lon.toFixed(2)})</b><br>${data.daily.temperature_2m_max[0]}°C / ${data.daily.temperature_2m_min[0]}°C`)
+      .openOn(map);
   });
+}
+
+function searchLocation() {
+  const query = document.getElementById('searchBox').value;
+  if (!query) return;
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(results => {
+      if (results.length > 0) {
+        const lat = parseFloat(results[0].lat);
+        const lon = parseFloat(results[0].lon);
+        const map = L.map('map');
+        map.setView([lat, lon], 10);
+      }
+    });
 }
 
 document.getElementById('daysSelect').addEventListener('change', loadAll);
