@@ -4,176 +4,179 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dự báo thời tiết</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <style>
     body {
-        font-family: Arial, sans-serif;
         margin: 0;
-        padding: 0;
+        font-family: Arial, sans-serif;
         background: url('background.jpg') no-repeat center center fixed;
         background-size: cover;
-        color: #333;
+        color: #fff;
     }
     header {
         text-align: center;
-        padding: 15px;
-        background: rgba(255,255,255,0.8);
-        font-size: 1.2em;
-        font-weight: bold;
+        padding: 10px;
+        background: rgba(0,0,0,0.5);
     }
-    .current-time {
-        font-size: 0.9em;
+    header h1 {
+        margin: 0;
+    }
+    header .datetime {
+        font-size: 14px;
         margin-top: 5px;
-        color: #555;
     }
     .locations {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 15px;
+        gap: 10px;
         padding: 10px;
     }
     .location {
         flex: 1 1 300px;
-        background: rgba(255,255,255,0.85);
-        border-radius: 12px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 10px;
         padding: 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        text-align: center;
     }
-    .forecast-container {
+    .location h2 {
+        text-align: center;
+        margin: 5px 0;
+    }
+    .forecast {
         display: flex;
         overflow-x: auto;
-        gap: 10px;
-        padding: 10px 0;
-        scroll-behavior: smooth;
+        gap: 8px;
+        padding: 5px;
     }
-    .forecast-day {
-        min-width: 100px;
-        background: rgba(255,255,255,0.9);
-        border-radius: 10px;
+    .day {
+        flex: 0 0 auto;
+        min-width: 90px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 8px;
         padding: 5px;
         text-align: center;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-        flex-shrink: 0;
     }
-    .temp-high {
-        color: red;
-        font-weight: bold;
-    }
-    .temp-low {
-        color: blue;
-    }
+    .temp-high { color: red; }
+    .temp-low { color: blue; }
     #map {
-        width: 100%;
         height: 400px;
         margin-top: 10px;
     }
-    @media (max-width: 768px) {
-        .locations {
-            flex-direction: column;
-            align-items: center;
-        }
-        .forecast-day {
-            min-width: 80px;
-        }
+    @media (max-width: 600px) {
+        .forecast { gap: 4px; }
+        .day { min-width: 80px; font-size: 12px; }
     }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 </head>
 <body>
-
 <header>
-    Dự báo thời tiết 7 ngày
-    <div class="current-time" id="currentTime"></div>
+    <h1>Dự báo thời tiết</h1>
+    <div class="datetime" id="datetime"></div>
 </header>
 
-<div class="locations" id="locations"></div>
+<div class="locations" id="locations">
+    <!-- Vị trí cố định -->
+</div>
 
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
 const fixedLocations = [
-    { name: "Đức Trọng - Lâm Đồng", lat: 11.735, lon: 108.369 },
+    { name: "Đức Trọng - Lâm Đồng", lat: 11.745, lon: 108.373 },
     { name: "Tân An - Long An", lat: 10.535, lon: 106.413 },
-    { name: "TP. Hồ Chí Minh", lat: 10.776, lon: 106.700 }
+    { name: "TP. Hồ Chí Minh", lat: 10.775, lon: 106.700 }
 ];
 
-function updateTime() {
+function updateDateTime() {
     const now = new Date();
-    document.getElementById("currentTime").textContent =
-        now.toLocaleString("vi-VN", { weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('datetime').textContent =
+        now.toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'medium' });
 }
-setInterval(updateTime, 1000);
-updateTime();
+setInterval(updateDateTime, 1000);
+updateDateTime();
 
-function createForecastHTML(data) {
-    let html = '<div class="forecast-container">';
-    for (let i = 0; i < data.daily.time.length; i++) {
-        html += `
-        <div class="forecast-day">
-            <div>${new Date(data.daily.time[i]).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
-            <img src="https://open-meteo.com/images/weather-icons/${data.daily.weathercode[i]}.png" width="40">
-            <div class="temp-high">${data.daily.temperature_2m_max[i]}°C</div>
-            <div class="temp-low">${data.daily.temperature_2m_min[i]}°C</div>
-            <div>${data.daily.precipitation_probability_max[i]}% mưa</div>
+function createLocationCard(name, daily) {
+    let html = `<div class="location"><h2>${name}</h2><div class="forecast">`;
+    daily.forEach(day => {
+        html += `<div class="day">
+            <div>${day.date}</div>
+            <img src="${day.icon}" width="40">
+            <div class="temp-high">${day.max}°C</div>
+            <div class="temp-low">${day.min}°C</div>
+            <div>☔ ${day.rain}%</div>
         </div>`;
-    }
-    html += '</div>';
+    });
+    html += `</div></div>`;
     return html;
 }
 
-async function fetchWeather(lat, lon) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto`;
+async function getWeather(lat, lon) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=Asia%2FBangkok`;
     const res = await fetch(url);
-    return res.json();
+    const data = await res.json();
+    return data.daily.time.map((d, i) => ({
+        date: new Date(d).toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+        max: data.daily.temperature_2m_max[i],
+        min: data.daily.temperature_2m_min[i],
+        rain: data.daily.precipitation_probability_max[i],
+        icon: getWeatherIcon(data.daily.weathercode[i])
+    }));
+}
+
+function getWeatherIcon(code) {
+    if (code === 0) return "https://cdn-icons-png.flaticon.com/512/869/869869.png";
+    if ([1,2,3].includes(code)) return "https://cdn-icons-png.flaticon.com/512/1163/1163624.png";
+    if ([45,48].includes(code)) return "https://cdn-icons-png.flaticon.com/512/1163/1163625.png";
+    if ([51,53,55,61,63,65,80,81,82].includes(code)) return "https://cdn-icons-png.flaticon.com/512/1163/1163657.png";
+    return "https://cdn-icons-png.flaticon.com/512/1163/1163661.png";
 }
 
 async function loadFixedLocations() {
-    const container = document.getElementById("locations");
-    for (const loc of fixedLocations) {
-        const data = await fetchWeather(loc.lat, loc.lon);
-        const div = document.createElement("div");
-        div.className = "location";
-        div.innerHTML = `<h3>${loc.name}</h3>${createForecastHTML(data)}`;
-        container.appendChild(div);
+    let html = "";
+    for (let loc of fixedLocations) {
+        const daily = await getWeather(loc.lat, loc.lon);
+        html += createLocationCard(loc.name, daily);
     }
+    document.getElementById('locations').innerHTML = html;
 }
+
+loadFixedLocations();
+
+// Bản đồ
+const map = L.map('map').setView([15.9, 105.8], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
 
 async function reverseGeocode(lat, lon) {
     const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=vi`;
     const res = await fetch(url);
     const data = await res.json();
-    return data?.results?.[0]?.name || "Vị trí không xác định";
+    return data?.results?.[0]?.admin1 || "Vị trí không xác định";
 }
 
-function initMap() {
-    const map = L.map('map').setView([15.5, 108], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+async function onMapClick(e) {
+    const lat = e.latlng.lat;
+    const lon = e.latlng.lng;
+    const name = await reverseGeocode(lat, lon);
+    const daily = await getWeather(lat, lon);
 
-    function showWeatherPopup(lat, lon) {
-        fetchWeather(lat, lon).then(async data => {
-            const place = await reverseGeocode(lat, lon);
-            const html = `<b>${place}</b><br>${new Date().toLocaleDateString('vi-VN')}<br>
-                Nhiệt độ cao: <span style="color:red">${data.daily.temperature_2m_max[0]}°C</span><br>
-                Nhiệt độ thấp: <span style="color:blue">${data.daily.temperature_2m_min[0]}°C</span><br>
-                ${data.daily.precipitation_probability_max[0]}% mưa
-            `;
-            L.popup().setLatLng([lat, lon]).setContent(html).openOn(map);
-        });
-    }
-
-    map.on('click', e => showWeatherPopup(e.latlng.lat, e.latlng.lng));
-    map.on('touchend', e => {
-        if (e.latlng) showWeatherPopup(e.latlng.lat, e.latlng.lng);
+    let content = `<b>${name}</b><br>`;
+    daily.slice(0, 3).forEach(d => {
+        content += `${d.date}: <span style="color:red">${d.max}°C</span> / <span style="color:blue">${d.min}°C</span> ☔${d.rain}%<br>`;
     });
+
+    L.popup()
+        .setLatLng(e.latlng)
+        .setContent(content)
+        .openOn(map);
 }
 
-loadFixedLocations();
-initMap();
+map.on('click', onMapClick);
+map.on('touchend', function(ev){
+    if(ev.latlng) onMapClick(ev);
+});
 </script>
-
 </body>
 </html>
