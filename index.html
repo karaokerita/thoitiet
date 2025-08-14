@@ -9,7 +9,8 @@
   header { background: #4a90e2; color: white; padding: 10px; text-align: center; }
   .locations { display: flex; flex-wrap: wrap; justify-content: center; padding: 10px; }
   .card { background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); margin: 10px; padding: 10px; width: 300px; }
-  h2 { margin: 0 0 10px 0; }
+  h2 { margin: 0 0 5px 0; }
+  .datetime { font-size: 0.9em; color: #555; margin-bottom: 10px; }
   table { width: 100%; border-collapse: collapse; }
   th, td { padding: 5px; text-align: center; }
 </style>
@@ -41,7 +42,10 @@ async function fetchWeather(lat, lon, days) {
 function renderWeather(location, data) {
   const card = document.createElement('div');
   card.className = 'card';
-  let html = `<h2>${location.name}</h2><table><tr><th>Ngày</th><th>Cao</th><th>Thấp</th><th>Mưa (mm)</th></tr>`;
+  const now = new Date();
+  const datetimeStr = now.toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' });
+  let html = `<h2>${location.name}</h2><div class="datetime">${datetimeStr}</div>`;
+  html += `<table><tr><th>Ngày</th><th>Cao</th><th>Thấp</th><th>Mưa (mm)</th></tr>`;
   data.daily.time.forEach((date, i) => {
     html += `<tr><td>${date}</td><td>${data.daily.temperature_2m_max[i]}°C</td><td>${data.daily.temperature_2m_min[i]}°C</td><td>${data.daily.precipitation_sum[i]}</td></tr>`;
   });
