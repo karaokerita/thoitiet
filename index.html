@@ -1,30 +1,202 @@
-// components/WeatherCard.jsx
-import { useState } from "react";
-
-export default function WeatherCard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchWeather = async () => {
-    setLoading(true);
-    const res = await fetch(`http://localhost:8000/weather?lat=21.0285&lon=105.8542`);
-    setData(await res.json());
-    setLoading(false);
-  };
-
-  return (
-    <div className="p-6 max-w-sm mx-auto bg-white rounded-xl shadow mt-10">
-      <button onClick={fetchWeather} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">
-        {loading ? "Đang tải..." : "Lấy dự báo Hà Nội"}
-      </button>
-      {data && !data.error && (
-        <div className="mt-4 space-y-2">
-          <p className="text-2xl font-bold">🌡️ {data.temperature_c}°C</p>
-          <p>💧 Độ ẩm: {data.humidity_pct}%</p>
-          <p>🌧️ Mưa: {data.precip_mm} mm</p>
-          <p className="text-xs text-gray-500">Tổng hợp từ {data.sources_used} nguồn</p>
-        </div>
-      )}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dự Báo Thời Tiết Đa Nguồn</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg: #f0f4f8; --card: #ffffff; --primary: #2563eb; --text: #1e293b;
+      --muted: #64748b; --border: #e2e8f0; --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { background: var(--card); padding: 1rem; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 1000; }
+    .header-inner { max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
+    h1 { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+    .search-box { display: flex; gap: 0.5rem; flex: 1; min-width: 250px; max-width: 400px; }
+    input { flex: 1; padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 8px; outline: none; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.2); }
+    button { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+    button:hover { opacity: 0.9; }
+    button:disabled { background: var(--muted); cursor: not-allowed; }
+    main { max-width: 1200px; margin: 1rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media(min-width: 900px) { main { grid-template-columns: 1.2fr 1fr; } }
+    #map { height: 400px; border-radius: 12px; box-shadow: var(--shadow); }
+    .panel { background: var(--card); padding: 1.2rem; border-radius: 12px; box-shadow: var(--shadow); min-height: 400px; }
+    .panel h2 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .location-tag { background: #e0e7ff; color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.85rem; }
+    .current { text-align: center; padding: 1.5rem 0; border-bottom: 1px dashed var(--border); margin-bottom: 1.5rem; }
+    .current .icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .current .temp { font-size: 2.5rem; font-weight: 700; }
+    .current .desc { color: var(--muted); margin-top: 0.25rem; }
+    .details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .detail { text-align: center; padding: 0.8rem; background: #f8fafc; border-radius: 8px; }
+    .detail .val { font-weight: 600; font-size: 1.1rem; }
+    .detail .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+    .sources { font-size: 0.8rem; color: var(--muted); background: #f1f5f9; padding: 0.6rem; border-radius: 6px; margin-bottom: 1.5rem; }
+    .forecast h3 { font-size: 0.95rem; margin-bottom: 0.8rem; }
+    .forecast-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.8rem; }
+    .forecast-item { background: #f8fafc; padding: 0.8rem; border-radius: 8px; text-align: center; }
+    .forecast-item .day { font-weight: 600; margin-bottom: 0.3rem; }
+    .forecast-item .range { font-size: 0.9rem; }
+    .loading, .error { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .error { color: #ef4444; }
+    footer { text-align: center; padding: 1.5rem; font-size: 0.75rem; color: var(--muted); }
+    .spinner { width: 24px; height: 24px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>🌤️ Dự Báo Thời Tiết Đa Nguồn</h1>
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Nhập tên thành phố (vd: Hà Nội, Đà Nẵng)...">
+        <button id="search-btn">Tìm</button>
+      </div>
     </div>
-  );
-}
+  </header>
+
+  <main>
+    <div id="map"></div>
+    <div class="panel" id="weather-panel">
+      <div class="loading">👆 Click lên bản đồ hoặc nhập địa điểm để xem dự báo</div>
+    </div>
+  </main>
+
+  <footer>
+    Dữ liệu: Open-Meteo (ECMWF, GFS, CMA) • Bản đồ: OpenStreetMap • Tổng hợp & Xử lý: Client-side
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // 1. KHỞI TẠO BẢN ĐỒ
+    const map = L.map('map').setView([21.0278, 105.8342], 10); // Hà Nội mặc định
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    let marker;
+    map.on('click', function(e) {
+      if(marker) marker.remove();
+      marker = L.marker(e.latlng).addTo(map);
+      fetchWeather(e.latlng.lat, e.latlng.lng, 'Vị trí trên bản đồ');
+    });
+
+    // 2. XỬ LÝ TÌM KIẾM
+    document.getElementById('search-btn').addEventListener('click', searchLocation);
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+      if(e.key === 'Enter') searchLocation();
+    });
+
+    async function searchLocation() {
+      const q = document.getElementById('search-input').value.trim();
+      if(!q) return alert('Vui lòng nhập địa điểm');
+      try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=vi&format=json`);
+        const data = await res.json();
+        if(!data.results?.length) return alert('Không tìm thấy địa điểm. Vui lòng thử tên khác.');
+        const loc = data.results[0];
+        if(marker) marker.remove();
+        marker = L.marker([loc.latitude, loc.longitude]).addTo(map);
+        map.setView([loc.latitude, loc.longitude], 10);
+        fetchWeather(loc.latitude, loc.longitude, loc.name);
+      } catch(err) {
+        alert('Lỗi kết nối dịch vụ bản đồ');
+      }
+    }
+
+    // 3. TỔNG HỢP DỮ LIỆU ĐA NGUỒN
+    const MODELS = ['ecmwf_ifs025', 'gfs_global', 'cma_seamless']; // 3 mô hình lớn
+    const WMO_VI = {
+      0:'Trời quang', 1:'Chủ yếu quang', 2:'Mây rải rác', 3:'Nhiều mây',
+      45:'Sương mù', 48:'Sương muối', 51:'Mưa phùn nhẹ', 53:'Mưa phùn', 55:'Mưa phùn dày',
+      61:'Mưa nhẹ', 63:'Mưa vừa', 65:'Mưa to', 71:'Tuyết nhẹ', 73:'Tuyết', 75:'Tuyết dày',
+      80:'Mưa rào nhẹ', 81:'Mưa rào vừa', 82:'Mưa rào to', 95:'Dông', 96:'Dông có mưa đá', 99:'Dông dữ dội'
+    };
+
+    function getIcon(code) {
+      if(code<=1) return '☀️'; if(code<=3) return '⛅'; if(code<=48) return '🌫️';
+      if(code<=55) return '🌦️'; if(code<=65) return '🌧️'; if(code<=75) return '🌨️';
+      if(code<=82) return '🌦️'; if(code<=99) return '⛈️'; return '🌤️';
+    }
+
+    async function fetchWeather(lat, lon, locationName) {
+      const panel = document.getElementById('weather-panel');
+      panel.innerHTML = '<div class="loading"><div class="spinner"></div>Đang tổng hợp dữ liệu từ 3 mô hình...</div>';
+      
+      // Gọi song song 3 nguồn
+      const urls = MODELS.map(m => 
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia/Ho_Chi_Minh&forecast_days=4&models=${m}`
+      );
+
+      const results = await Promise.allSettled(urls.map(u => fetch(u).then(r=>r.json())));
+      const valid = results.filter(r => r.status === 'fulfilled' && r.value.current).map(r => r.value);
+      
+      if(valid.length === 0) {
+        panel.innerHTML = '<div class="error">⚠️ Không thể lấy dữ liệu từ bất kỳ nguồn nào. Vui lòng thử lại sau.</div>';
+        return;
+      }
+
+      // Tổng hợp (Average/Max)
+      const avg = (arr) => arr.reduce((a,b)=>a+b,0)/arr.length;
+      const max = (arr) => Math.max(...arr);
+      const mode = (arr) => arr.sort((a,b)=>arr.filter(v=>v===a).length-arr.filter(v=>v===b).length).pop(); // Lặp lại nhiều nhất
+
+      const current = {
+        temp: avg(valid.map(v=>v.current.temperature_2m)),
+        feels: avg(valid.map(v=>v.current.apparent_temperature)),
+        humidity: avg(valid.map(v=>v.current.relative_humidity_2m)),
+        wind: avg(valid.map(v=>v.current.wind_speed_10m)),
+        precip: max(valid.map(v=>v.current.precipitation)),
+        code: mode(valid.map(v=>v.current.weather_code)),
+        sources: valid.length
+      };
+
+      const daily = valid[0].daily.time.map((t, i) => ({
+        date: t,
+        code: valid[0].daily.weather_code[i],
+        min: avg(valid.map(v=>v.daily.temperature_2m_min[i])),
+        max: avg(valid.map(v=>v.daily.temperature_2m_max[i])),
+        precip: avg(valid.map(v=>v.daily.precipitation_sum[i]))
+      }));
+
+      renderUI(current, daily, locationName, lat, lon);
+    }
+
+    function renderUI(cur, daily, locName, lat, lon) {
+      const panel = document.getElementById('weather-panel');
+      const today = new Date().toLocaleDateString('vi-VN', {weekday:'long'});
+      const forecastHTML = daily.slice(1).map(d => `
+        <div class="forecast-item">
+          <div class="day">${new Date(d.date).toLocaleDateString('vi-VN', {weekday:'short'})}</div>
+          <div style="font-size:1.5rem">${getIcon(d.code)}</div>
+          <div class="range">${Math.round(d.min)}° - ${Math.round(d.max)}°</div>
+          <div style="font-size:0.8rem;color:#64748b">💧${d.precip.toFixed(1)}mm</div>
+        </div>
+      `).join('');
+
+      panel.innerHTML = `
+        <h2><span id="loc-name">${locName}</span> <span class="location-tag">📍 ${lat.toFixed(3)}, ${lon.toFixed(3)}</span></h2>
+        <div class="current">
+          <div class="icon">${getIcon(cur.code)}</div>
+          <div class="temp">${Math.round(cur.temp)}°C</div>
+          <div class="desc">${WMO_VI[cur.code] || 'Không rõ'} • Cảm giác như ${Math.round(cur.feels)}°C</div>
+        </div>
+        <div class="details">
+          <div class="detail"><div class="val">💧 ${Math.round(cur.humidity)}%</div><div class="label">Độ ẩm</div></div>
+          <div class="detail"><div class="val">💨 ${Math.round(cur.wind)} km/h</div><div class="label">Gió</div></div>
+          <div class="detail"><div class="val">🌧️ ${cur.precip.toFixed(1)} mm</div><div class="label">Lượng mưa hiện tại</div></div>
+        </div>
+        <div class="sources">🔍 Dữ liệu được tổng hợp từ ${cur.sources}/3 nguồn: ECMWF, GFS, CMA. Giá trị hiện tại là trung bình cộng.</div>
+        <div class="forecast">
+          <h3>📅 Dự báo 3 ngày tới</h3>
+          <div class="forecast-grid">${forecastHTML}</div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
