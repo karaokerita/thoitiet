@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌦️ Dự Báo Thời Tiết Đa Nguồn</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <style>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/fontsource-inter/4.5.1/vietnamese.min.css');
@@ -15,7 +14,6 @@ body{min-height:100vh;background:linear-gradient(135deg,#0c1445 0%,#1a365d 30%,#
 body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");z-index:0;pointer-events:none}
 .container{max-width:1400px;margin:0 auto;padding:0 1.5rem;position:relative;z-index:1}
 
-/* HEADER */
 header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(15,23,42,0.7);border-bottom:1px solid rgba(255,255,255,0.1)}
 .header-content{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem}
 .logo{display:flex;align-items:center;gap:0.75rem}
@@ -28,10 +26,9 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
 .geo-btn{background:linear-gradient(135deg,#22d3ee,#3b82f6);padding:0.5rem 1rem;border-radius:50px;font-size:0.85rem;font-weight:600}
 .geo-btn:hover{box-shadow:0 0 20px rgba(34,211,238,0.4)}
 
-/* SEARCH & LOCATION */
 .search-section{padding:1.5rem 0}
-.search-grid{display:grid;grid-template-columns:1fr 280px;gap:1.5rem}
-@media(max-width:900px){.search-grid{grid-template-columns:1fr}.search-grid select{width:100%}}
+.search-grid{display:grid;grid-template-columns:1fr 350px;gap:1.5rem}
+@media(max-width:900px){.search-grid{grid-template-columns:1fr}}
 .search-box{display:flex;gap:0.5rem;background:var(--glass);padding:0.5rem;border-radius:16px;border:1px solid rgba(255,255,255,0.15)}
 .search-box input{flex:1;background:transparent;border:none;padding:0.8rem 1rem;color:white;font-size:1rem;outline:none}
 .search-box input::placeholder{color:rgba(255,255,255,0.5)}
@@ -42,7 +39,6 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
 .location-dropdowns select option{background:#1e293b;color:white}
 .loc-label{font-size:0.75rem;opacity:0.7;margin-bottom:-0.3rem}
 
-/* CURRENT WEATHER */
 .current-weather{display:grid;grid-template-columns:1fr 1fr;gap:2rem;padding:2rem 0}
 @media(max-width:700px){.current-weather{grid-template-columns:1fr}}
 .weather-main{background:var(--glass);backdrop-filter:blur(20px);border-radius:24px;padding:2rem;border:1px solid rgba(255,255,255,0.15);position:relative;overflow:hidden}
@@ -60,7 +56,6 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
 .detail-card .val{font-size:1.4rem;font-weight:700;margin:0.3rem 0}
 .detail-card .lbl{font-size:0.8rem;opacity:0.7}
 
-/* 7 DAY FORECAST */
 .forecast-section{padding:1.5rem 0}
 .section-title{font-size:1.4rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem}
 .forecast-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1rem}
@@ -76,19 +71,21 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
 .forecast-card .low{opacity:0.6;font-size:0.9rem}
 .forecast-card .rain{font-size:0.8rem;margin-top:0.5rem;color:#60a5fa}
 
-/* SOURCES */
 .sources-bar{background:var(--glass2);border-radius:12px;padding:1rem 1.5rem;margin:1.5rem 0;display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:center;font-size:0.85rem;border:1px solid rgba(255,255,255,0.1)}
 .source-tag{display:flex;align-items:center;gap:0.5rem}
 .source-dot{width:8px;height:8px;border-radius:50%;animation:blink 2s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-/* MAP */
 .map-section{padding:2rem 0}
 .map-container{background:var(--glass);backdrop-filter:blur(20px);border-radius:24px;padding:1rem;border:1px solid rgba(255,255,255,0.15)}
-.map-container h2{font-size:1.2rem;margin-bottom:1rem;text-align:center;display:flex;align-items:center;justify-content:center;gap:0.5rem}
-#map{height:400px;border-radius:16px;overflow:hidden}
+.map-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem}
+.map-header h2{font-size:1.2rem;display:flex;align-items:center;gap:0.5rem}
+.map-type-toggle{display:flex;gap:0.5rem;background:var(--glass2);padding:0.3rem;border-radius:10px;border:1px solid rgba(255,255,255,0.1)}
+.map-type-btn{padding:0.5rem 1rem;border-radius:8px;border:none;cursor:pointer;font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.6);background:transparent;transition:0.3s}
+.map-type-btn.active{background:rgba(255,255,255,0.2);color:#fff}
+.map-type-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+#map{height:500px;border-radius:16px;overflow:hidden;background:#1a365d}
 
-/* LOADING & ERROR */
 .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.8);backdrop-filter:blur(10px);z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:1rem}
 .loading-overlay.show{display:flex}
 .loader{width:50px;height:50px;border:4px solid rgba(255,255,255,0.2);border-top-color:#fbbf24;border-radius:50%;animation:spin 0.8s linear infinite}
@@ -96,7 +93,6 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
 .loading-text{font-size:1.1rem;opacity:0.9}
 .error-msg{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:12px;padding:1rem;text-align:center;color:#fca5a5;margin:1rem 0}
 
-/* ANIMATIONS */
 .fade-in{animation:fadeIn 0.5s ease-out forwards}
 @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .weather-particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
@@ -106,31 +102,21 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
 </head>
 <body>
 
-<!-- PARTICLES -->
 <div class="weather-particles" id="particles"></div>
 
-<!-- LOADING -->
 <div class="loading-overlay" id="loading">
   <div class="loader"></div>
   <div class="loading-text">Đang tổng hợp dữ liệu từ nhiều nguồn...</div>
 </div>
 
-<!-- HEADER -->
 <header>
   <div class="container header-content">
-    <div class="logo">
-      <i class="fas fa-cloud-sun-rain"></i>
-      <h1>Dự Báo Thời Tiết Đa Nguồn</h1>
-    </div>
-    <div class="datetime">
-      <div id="clock">--:--:--</div>
-      <div id="date-display">--/--/----</div>
-    </div>
+    <div class="logo"><i class="fas fa-cloud-sun-rain"></i><h1>Dự Báo Thời Tiết Đa Nguồn</h1></div>
+    <div class="datetime"><div id="clock">--:--:--</div><div id="date-display">--/--/----</div></div>
     <button class="geo-btn" onclick="getUserLocation()"><i class="fas fa-location-crosshairs"></i> Vị trí của tôi</button>
   </div>
 </header>
 
-<!-- SEARCH & LOCATION -->
 <div class="container search-section">
   <div class="search-grid">
     <div>
@@ -145,19 +131,10 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
       <select id="province-select" onchange="onProvinceChange()">
         <option value="">-- Chọn tỉnh/thành phố --</option>
       </select>
-      <div class="loc-label">🏘️ Chọn Quận/Huyện</div>
-      <select id="district-select" onchange="onDistrictChange()">
-        <option value="">-- Chọn quận/huyện --</option>
-      </select>
-      <div class="loc-label">🏡 Chọn Phường/Xã</div>
-      <select id="commune-select" onchange="onCommuneSelect()">
-        <option value="">-- Chọn phường/xã --</option>
-      </select>
     </div>
   </div>
 </div>
 
-<!-- CURRENT WEATHER -->
 <div class="container">
   <div id="weather-content">
     <div class="current-weather" id="current-section" style="display:none">
@@ -166,21 +143,18 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
         <div class="weather-icon-main" id="main-icon">🌤️</div>
         <div class="temp-display" id="main-temp">--<span>°C</span></div>
         <div class="weather-desc" id="main-desc">--</div>
-        <div style="text-align:center;margin-top:0.5rem;font-size:0.9rem;opacity:0.7">
-          Cảm giác như <span id="feels-like">--</span>°C
-        </div>
+        <div style="text-align:center;margin-top:0.5rem;font-size:0.9rem;opacity:0.7">Cảm giác như <span id="feels-like">--</span>°C</div>
       </div>
       <div class="weather-details" id="details-grid">
         <div class="detail-card"><i class="fas fa-droplet" style="color:#3b82f6"></i><div class="val" id="d-humidity">--%</div><div class="lbl">Độ ẩm</div></div>
         <div class="detail-card"><i class="fas fa-wind" style="color:#60a5fa"></i><div class="val" id="d-wind">-- km/h</div><div class="lbl">Tốc độ gió</div></div>
         <div class="detail-card"><i class="fas fa-cloud-rain" style="color:#94a3b8"></i><div class="val" id="d-rain">-- mm</div><div class="lbl">Lượng mưa</div></div>
         <div class="detail-card"><i class="fas fa-sun" style="color:#fbbf24"></i><div class="val" id="d-uv">--</div><div class="lbl">Chỉ số UV</div></div>
-        <div class="detail-card"><i class="fas fa-eye" style="color:#a78bfa"></i><div class="val" id="d-visibility">-- km</div><div class="lbl">Tầm nhìn</div></div>
+        <div class="detail-card"><i class="fas fa-compress" style="color:#a78bfa"></i><div class="val" id="d-visibility">-- km</div><div class="lbl">Tầm nhìn</div></div>
         <div class="detail-card"><i class="fas fa-temperature-half" style="color:#ef4444"></i><div class="val" id="d-pressure">-- hPa</div><div class="lbl">Áp suất</div></div>
       </div>
     </div>
 
-    <!-- SOURCES -->
     <div id="sources-bar" class="sources-bar" style="display:none">
       <div style="width:100%;text-align:center;margin-bottom:0.5rem;font-weight:600">📊 Dữ liệu được tổng hợp từ:</div>
       <div class="source-tag"><div class="source-dot" style="background:#22c55e"></div> Open-Meteo (ECMWF)</div>
@@ -189,7 +163,6 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
       <div class="source-tag"><div class="source-dot" style="background:#ef4444"></div> Open-Meteo (ICON)</div>
     </div>
 
-    <!-- 7 DAY FORECAST -->
     <div class="forecast-section" id="forecast-section" style="display:none">
       <div class="section-title"><i class="fas fa-calendar-week"></i> Dự Báo 7 Ngày Tới</div>
       <div class="forecast-grid" id="forecast-grid"></div>
@@ -197,135 +170,61 @@ header{padding:1rem 0;position:sticky;top:0;z-index:100;backdrop-filter:blur(20p
   </div>
 </div>
 
-<!-- MAP -->
 <div class="container map-section">
   <div class="map-container">
-    <h2><i class="fas fa-map-location-dot"></i> Chọn vị trí trên bản đồ</h2>
+    <div class="map-header">
+      <h2><i class="fas fa-map-location-dot"></i> Bản đồ & Ranh giới tỉnh</h2>
+      <div class="map-type-toggle">
+        <button class="map-type-btn active" id="btn-sat" onclick="setMapType('satellite')"><i class="fas fa-globe"></i> Vệ tinh</button>
+        <button class="map-type-btn" id="btn-road" onclick="setMapType('roadmap')"><i class="fas fa-road"></i> Đường phố</button>
+      </div>
+    </div>
     <div id="map"></div>
   </div>
 </div>
 
 <footer style="text-align:center;padding:2rem 0;opacity:0.5;font-size:0.8rem">
-  © 2026 Dự Báo Thời Tiết Đa Nguồn • Dữ liệu: Open-Meteo API • Bản đồ: OpenStreetMap • Giao diện thiết kế cho KARAOKE RITA
+  © 2026 Dự Báo Thời Tiết Đa Nguồn • Dữ liệu: Open-Meteo API • Bản đồ: OpenStreetMap / ESRI Satellite
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ========== DỮ LIỆU HÀNH CHÍNH VIỆT NAM ==========
-const ADMIN_DATA = {
-  "Lâm Đồng": {
-    "Đức Trọng": {
-      "Thị trấn Liên Nghĩa": {lat:11.9547,lon:108.3808},
-      "Hiệp Thạnh": {lat:11.965,lon:108.35},
-      "Bình Thạnh": {lat:11.94,lon:108.34},
-      "N'Thol Hạ": {lat:11.92,lon:108.36},
-      "Tà Năng": {lat:11.88,lon:108.32}
-    },
-    "Đà Lạt": {
-      "Phường 1": {lat:11.9404,lon:108.4583},
-      "Phường 2": {lat:11.935,lon:108.445},
-      "Phường 3": {lat:11.94,lon:108.435},
-      "Phường 4": {lat:11.93,lon:108.45},
-      "Xã Xuân Thọ": {lat:11.97,lon:108.49},
-      "Xã Tà Nung": {lat:11.88,lon:108.39}
-    },
-    "Bảo Lộc": {
-      "Phường Lộc Tiến": {lat:11.5667,lon:107.8},
-      "Phường B'Lao": {lat:11.55,lon:107.82},
-      "Xã Đạm Bri": {lat:11.58,lon:107.78}
-    },
-    "Di Linh": {
-      "Thị trấn Di Linh": {lat:12.0333,lon:108.05},
-      "Xã Đinh Lạc": {lat:12.05,lon:108.08}
-    },
-    "Đơn Dương": {
-      "Thị trấn D'Ran": {lat:11.8667,lon:108.4},
-      "Xã Lạc Xuân": {lat:11.85,lon:108.38}
-    }
-  },
-  "Hà Nội": {
-    "Quận Ba Đình": {"Phúc Xá":{lat:21.04,lon:105.84},"Trúc Bạch":{lat:21.04,lon:105.85},"Vĩnh Phúc":{lat:21.05,lon:105.83}},
-    "Quận Hoàn Kiếm": {"Hàng Bạc":{lat:21.03,lon:105.85},"Hàng Đào":{lat:21.03,lon:105.86},"Hàng Gai":{lat:21.03,lon:105.86}},
-    "Quận Cầu Giấy": {"Dịch Vọng":{lat:21.03,lon:105.79},"Quan Hoa":{lat:21.03,lon:105.78},"Nghĩa Đô":{lat:21.04,lon:105.78}},
-    "Quận Đống Đa": {"Ô Chợ Dừa":{lat:21.01,lon:105.83},"Láng Thượng":{lat:21.02,lon:105.82},"Khâm Thiên":{lat:21.01,lon:105.84}},
-    "Quận Hai Bà Trưng": {"Bách Khoa":{lat:21.00,lon:105.86},"Thanh Nhàn":{lat:21.01,lon:105.87},"Nguyễn Du":{lat:21.01,lon:105.86}},
-    "Huyện Sóc Sơn": {"Thị trấn Sóc Sơn":{lat:21.25,lon:105.83},"Hiền Ninh":{lat:21.23,lon:105.85}}
-  },
-  "TP. Hồ Chí Minh": {
-    "Quận 1": {"Bến Nghé":{lat:10.77,lon:106.7},"Bến Thành":{lat:10.77,lon:106.69}},
-    "Quận Bình Thạnh": {"Phường 14":{lat:10.80,lon:106.71},"Phường 25":{lat:10.79,lon:106.71}},
-    "Quận 3": {"Phường 1":{lat:10.78,lon:106.68},"Phường 5":{lat:10.77,lon:106.67}},
-    "TP. Thủ Đức": {"Linh Trung":{lat:10.86,lon:106.77},"Linh Chiểu":{lat:10.85,lon:106.76}},
-    "Huyện Nhà Bè": {"Thị trấn Nhà Bè":{lat:10.7,lon:106.74},"Phước Kiển":{lat:10.71,lon:106.72}}
-  },
-  "Đà Nẵng": {
-    "Quận Hải Châu": {"Thanh Bình":{lat:16.07,lon:108.22},"Hòa Cường Bắc":{lat:16.05,lon:108.22}},
-    "Quận Thanh Khê": {"Xuân Hà":{lat:16.07,lon:108.19},"Tân Chính":{lat:16.07,lon:108.2}},
-    "Quận Sơn Trà": {"An Hải Bắc":{lat:16.08,lon:108.24},"Thọ Quang":{lat:16.09,lon:108.26}},
-    "Quận Ngũ Hành Sơn": {"Mỹ An":{lat:16.03,lon:108.26},"Khuê Mỹ":{lat:16.04,lon:108.25}}
-  },
-  "Hải Phòng": {
-    "Quận Hồng Bàng": {"Quán Toan":{lat:20.87,lon:106.66},"Sở Dầu":{lat:20.88,lon:106.68}},
-    "Quận Ngô Quyền": {"Máy Tơ":{lat:20.86,lon:106.7},"Máy Chai":{lat:20.87,lon:106.71}},
-    "Quận Lê Chân": {"Cát Dài":{lat:20.85,lon:106.68},"Dư Hàng Kênh":{lat:20.84,lon:106.67}}
-  },
-  "Cần Thơ": {
-    "Quận Ninh Kiều": {"Cái Khế":{lat:10.03,lon:105.77},"Tân An":{lat:10.04,lon:105.78}},
-    "Quận Bình Thuỷ": {"Bình Thuỷ":{lat:10.05,lon:105.75},"Trà An":{lat:10.08,lon:105.74}},
-    "Quận Cái Răng": {"Lê Bình":{lat:10.00,lon:105.79},"Hưng Phú":{lat:9.99,lon:105.78}}
-  },
-  "Khánh Hòa": {
-    "TP. Nha Trang": {"Vĩnh Nguyên":{lat:12.24,lon:109.19},"Lộc Thọ":{lat:12.25,lon:109.19},"Phương Sơn":{lat:12.25,lon:109.18}},
-    "TP. Cam Ranh": {"Cam Phúc Bắc":{lat:11.92,lon:109.12},"Cam Linh":{lat:11.93,lon:109.13}},
-    "Huyện Diên Khánh": {"Thị trấn Diên Khánh":{lat:12.25,lon:109.11},"Diên Phú":{lat:12.23,lon:109.1}}
-  },
-  "Thừa Thiên Huế": {
-    "TP. Huế": {"Phú Hội":{lat:16.46,lon:107.58},"Phú Nhuận":{lat:16.47,lon:107.57},"An Đông":{lat:16.46,lon:107.56}},
-    "Hương Trà": {"Tứ Hạ":{lat:16.45,lon:107.5},"Hương Vân":{lat:16.48,lon:107.52}},
-    "Phú Lộc": {"Thị trấn Phú Lộc":{lat:16.3,lon:107.8},"Lăng Cô":{lat:16.33,lon:107.85}}
-  },
-  "Quảng Ninh": {
-    "TP. Hạ Long": {"Bãi Cháy":{lat:20.95,lon:107.08},"Hồng Hải":{lat:20.94,lon:107.1},"Hồng Hà":{lat:20.94,lon:107.07}},
-    "TP. Móng Cái": {"Ka Long":{lat:21.41,lon:107.96},"Trần Phú":{lat:21.42,lon:107.97}},
-    "TP. Uông Bí": {"Quang Trung":{lat:21.04,lon:106.77},"Nam Khê":{lat:21.03,lon:106.76}}
-  },
-  "Bà Rịa - Vũng Tàu": {
-    "TP. Vũng Tàu": {"Thắng Nhất":{lat:10.35,lon:107.08},"Thắng Nhì":{lat:10.35,lon:107.07},"Phước Hưng":{lat:10.37,lon:107.07}},
-    "TP. Bà Rịa": {"Phước Hưng":{lat:10.5,lon:107.17},"Phước Nguyên":{lat:10.51,lon:107.16}},
-    "Huyện Long Điền": {"Thị trấn Long Điền":{lat:10.42,lon:107.15},"An Ngãi":{lat:10.44,lon:107.13}}
-  },
-  "Bình Định": {
-    "TP. Quy Nhơn": {"Nhơn Bình":{lat:13.78,lon:109.22},"Lê Hồng Phong":{lat:13.77,lon:109.23},"Lý Thường Kiệt":{lat:13.78,lon:109.23}},
-    "Thị xã Hoài Nhơn": {"Tam Quan":{lat:14.35,lon:108.95},"Hoài Thanh":{lat:14.33,lon:108.97}},
-    "Huyện Tây Sơn": {"Thị trấn Phú Phong":{lat:14.1,lon:108.83},"Tây Thuận":{lat:14.12,lon:108.85}}
-  },
-  "Nghệ An": {
-    "TP. Vinh": {"Hồng Sơn":{lat:18.68,lon:105.68},"Lê Mao":{lat:18.67,lon:105.67},"Đội Cung":{lat:18.67,lon:105.69}},
-    "Thị xã Cửa Lò": {"Nghi Thuỷ":{lat:18.8,lon:105.73},"Nghi Hải":{lat:18.8,lon:105.72}},
-    "Huyện Diễn Châu": {"Thị trấn Diễn Châu":{lat:18.8,lon:105.55},"Diễn Lộc":{lat:18.83,lon:105.57}}
-  }
+const PROVINCE_BOUNDARIES = {
+  "Lâm Đồng": [[108.85,12.35],[108.65,12.38],[108.55,12.25],[108.45,12.15],[108.35,11.95],[108.25,11.85],[108.15,11.75],[107.95,11.70],[107.75,11.65],[107.55,11.55],[107.45,11.50],[107.35,11.45],[107.35,11.35],[107.45,11.30],[107.65,11.35],[107.85,11.40],[108.05,11.45],[108.25,11.55],[108.45,11.65],[108.65,11.75],[108.85,11.95],[108.95,12.15],[108.85,12.35]],
+  "Hà Nội": [[105.25,21.35],[105.35,21.40],[105.55,21.35],[105.75,21.30],[105.95,21.15],[106.05,21.05],[105.95,20.95],[105.85,20.85],[105.65,20.80],[105.45,20.85],[105.25,20.95],[105.15,21.05],[105.15,21.25],[105.25,21.35]],
+  "TP. Hồ Chí Minh": [[106.25,11.15],[106.45,11.20],[106.65,11.15],[106.85,11.10],[107.05,10.95],[107.05,10.75],[106.95,10.55],[106.75,10.40],[106.55,10.35],[106.35,10.40],[106.15,10.55],[106.15,10.75],[106.20,10.95],[106.25,11.15]],
+  "Đà Nẵng": [[108.15,16.55],[108.35,16.50],[108.45,16.40],[108.35,16.30],[108.25,16.25],[108.05,16.25],[107.85,16.30],[107.75,16.35],[107.85,16.45],[108.05,16.55],[108.15,16.55]],
+  "Hải Phòng": [[106.25,21.05],[106.45,21.10],[106.65,21.05],[106.85,20.95],[106.85,20.85],[106.75,20.75],[106.55,20.70],[106.35,20.75],[106.25,20.85],[106.20,20.95],[106.25,21.05]],
+  "Cần Thơ": [[105.55,10.15],[105.75,10.20],[105.95,10.15],[106.05,10.05],[106.05,9.85],[105.95,9.75],[105.75,9.70],[105.55,9.75],[105.45,9.85],[105.45,10.05],[105.55,10.15]],
+  "Khánh Hòa": [[109.55,12.95],[109.75,12.90],[109.85,12.75],[109.75,12.55],[109.65,12.35],[109.45,12.15],[109.25,12.05],[109.05,12.00],[108.85,12.05],[108.75,12.20],[108.85,12.45],[109.05,12.65],[109.25,12.85],[109.55,12.95]],
+  "Thừa Thiên Huế": [[107.15,16.85],[107.35,16.90],[107.55,16.85],[107.85,16.75],[108.05,16.55],[107.95,16.35],[107.75,16.15],[107.55,16.05],[107.35,16.10],[107.15,16.25],[107.05,16.45],[107.05,16.65],[107.15,16.85]],
+  "Quảng Ninh": [[106.35,21.85],[106.55,21.90],[106.75,21.85],[107.05,21.75],[107.35,21.60],[107.55,21.50],[107.75,21.35],[107.85,21.20],[107.75,21.05],[107.55,20.95],[107.25,20.90],[106.95,20.95],[106.65,21.05],[106.45,21.25],[106.35,21.55],[106.35,21.85]],
+  "Bà Rịa - Vũng Tàu": [[106.95,10.75],[107.15,10.70],[107.35,10.65],[107.55,10.55],[107.65,10.40],[107.55,10.25],[107.35,10.15],[107.15,10.10],[106.95,10.15],[106.75,10.25],[106.65,10.40],[106.75,10.55],[106.95,10.75]],
+  "Bình Định": [[109.55,14.55],[109.75,14.50],[109.95,14.40],[109.85,14.20],[109.75,14.00],[109.55,13.80],[109.35,13.65],[109.15,13.55],[108.95,13.60],[108.75,13.75],[108.65,13.95],[108.75,14.15],[108.95,14.35],[109.15,14.50],[109.55,14.55]],
+  "Nghệ An": [[104.35,20.15],[104.55,20.20],[104.85,20.15],[105.15,20.05],[105.45,19.85],[105.65,19.65],[105.75,19.45],[105.65,19.25],[105.45,19.05],[105.15,18.85],[104.85,18.75],[104.55,18.85],[104.35,19.05],[104.15,19.35],[104.15,19.75],[104.35,20.15]],
+  "Hòa Bình": [[105.25,21.15],[105.45,21.20],[105.65,21.15],[105.85,21.05],[105.95,20.85],[105.85,20.65],[105.65,20.50],[105.45,20.45],[105.25,20.55],[105.05,20.75],[105.05,20.95],[105.25,21.15]],
+  "Thanh Hóa": [[104.15,20.85],[104.35,20.90],[104.65,20.85],[104.95,20.75],[105.25,20.55],[105.55,20.35],[105.75,20.15],[105.85,19.95],[105.75,19.75],[105.55,19.55],[105.25,19.35],[104.95,19.15],[104.65,19.05],[104.35,19.15],[104.05,19.35],[103.95,19.65],[103.95,20.05],[104.15,20.85]],
+  "Đồng Nai": [[106.95,11.55],[107.15,11.60],[107.45,11.55],[107.75,11.45],[108.05,11.25],[108.15,11.05],[108.05,10.85],[107.85,10.65],[107.55,10.55],[107.25,10.55],[106.95,10.65],[106.75,10.85],[106.75,11.15],[106.95,11.55]]
 };
 
-// ========== MÃ WMO -> TIẾNG VIỆT + ICON ==========
 const WMO = {
   0:{vi:"Trời quang mây",icon:"☀️"},1:{vi:"Chủ yếu quang mây",icon:"🌤️"},2:{vi:"Mây rải rác",icon:"⛅"},3:{vi:"Nhiều mây",icon:"☁️"},
   45:{vi:"Sương mù",icon:"🌫️"},48:{vi:"Sương muối",icon:"🌫️"},
   51:{vi:"Mưa phùn nhẹ",icon:"🌦️"},53:{vi:"Mưa phùn vừa",icon:"🌦️"},55:{vi:"Mưa phùn dày",icon:"🌧️"},
-  56:{vi:"Mưa phùn đóng băng nhẹ",icon:"🌨️"},57:{vi:"Mưa phùn đóng băng dày",icon:"🌨️"},
   61:{vi:"Mưa nhỏ",icon:"🌦️"},63:{vi:"Mưa vừa",icon:"🌧️"},65:{vi:"Mưa to",icon:"🌧️"},
-  66:{vi:"Mưa đóng băng nhẹ",icon:"🌨️"},67:{vi:"Mưa đóng băng to",icon:"🌨️"},
   71:{vi:"Tuyết nhẹ",icon:"🌨️"},73:{vi:"Tuyết vừa",icon:"❄️"},75:{vi:"Tuyết dày",icon:"❄️"},
-  77:{vi:"Hạt tuyết",icon:"❄️"},
   80:{vi:"Mưa rào nhẹ",icon:"🌦️"},81:{vi:"Mưa rào vừa",icon:"🌧️"},82:{vi:"Mưa rào dữ dội",icon:"⛈️"},
-  85:{vi:"Mưa tuyết nhẹ",icon:"🌨️"},86:{vi:"Mưa tuyết dày",icon:"🌨️"},
-  95:{vi:"Dông",icon:"⛈️"},96:{vi:"Dông kèm mưa đá nhẹ",icon:"⛈️"},99:{vi:"Dông kèm mưa đá dữ dội",icon:"⛈️"}
+  95:{vi:"Dông",icon:"⛈️"},96:{vi:"Dông kèm mưa đá",icon:"⛈️"},99:{vi:"Dông dữ dội",icon:"⛈️"}
 };
 
-// ========== KHỞI TẠO ==========
 const DEFAULT_LOC = {name:"KARAOKE RITA, 8 Lý Thường Kiệt, Đức Trọng",lat:11.9547,lon:108.3808};
-let map, marker, weatherData = null;
+let map, marker, currentBoundary = null;
+const TILELAYERS = {
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:'© Esri'}),
+  roadmap: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap'})
+};
+let currentLayer = 'satellite';
 
-// Đồng hồ thời gian thực
 function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent = now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -333,78 +232,32 @@ function updateClock() {
 }
 setInterval(updateClock, 1000); updateClock();
 
-// Tạo hạt hiệu ứng nền
 function createParticles() {
   const c = document.getElementById('particles');
   for(let i=0;i<30;i++){
     const p = document.createElement('div');
-    p.className='particle';
-    p.style.left=Math.random()*100+'%';
-    p.style.animationDuration=(8+Math.random()*12)+'s';
-    p.style.animationDelay=Math.random()*10+'s';
-    p.style.width=p.style.height=(2+Math.random()*4)+'px';
-    c.appendChild(p);
+    p.className='particle';p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(8+Math.random()*12)+'s';p.style.animationDelay=Math.random()*10+'s';
+    p.style.width=p.style.height=(2+Math.random()*4)+'px';c.appendChild(p);
   }
 }
 createParticles();
 
-// ========== POPULATE DROPDOWNS ==========
 function populateProvinces() {
   const sel = document.getElementById('province-select');
-  Object.keys(ADMIN_DATA).sort().forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    sel.appendChild(opt);
+  Object.keys(PROVINCE_BOUNDARIES).sort().forEach(p => {
+    const opt = document.createElement('option');opt.value = p;opt.textContent = p;sel.appendChild(opt);
   });
 }
 populateProvinces();
 
-function onProvinceChange() {
-  const p = document.getElementById('province-select').value;
-  const dSel = document.getElementById('district-select');
-  const cSel = document.getElementById('commune-select');
-  dSel.innerHTML = '<option value="">-- Chọn quận/huyện --</option>';
-  cSel.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
-  if(!p || !ADMIN_DATA[p]) return;
-  Object.keys(ADMIN_DATA[p]).sort().forEach(d => {
-    const opt = document.createElement('option');
-    opt.value = d; opt.textContent = d;
-    dSel.appendChild(opt);
-  });
-}
-
-function onDistrictChange() {
-  const p = document.getElementById('province-select').value;
-  const d = document.getElementById('district-select').value;
-  const cSel = document.getElementById('commune-select');
-  cSel.innerHTML = '<option value="">-- Chọn phường/xã --</option>';
-  if(!p || !d || !ADMIN_DATA[p] || !ADMIN_DATA[p][d]) return;
-  Object.keys(ADMIN_DATA[p][d]).sort().forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    cSel.appendChild(opt);
-  });
-}
-
-function onCommuneSelect() {
-  const p = document.getElementById('province-select').value;
-  const d = document.getElementById('district-select').value;
-  const c = document.getElementById('commune-select').value;
-  if(!p || !d || !c || !ADMIN_DATA[p] || !ADMIN_DATA[p][d] || !ADMIN_DATA[p][d][c]) return;
-  const loc = ADMIN_DATA[p][d][c];
-  const fullName = `${c}, ${d}, ${p}`;
-  fetchWeather(loc.lat, loc.lon, fullName);
-}
-
-// ========== BẢN ĐỒ ==========
 function initMap() {
   map = L.map('map').setView([DEFAULT_LOC.lat, DEFAULT_LOC.lon], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+  TILELAYERS[currentLayer].addTo(map);
   marker = L.marker([DEFAULT_LOC.lat, DEFAULT_LOC.lon], {draggable:true}).addTo(map);
   marker.bindPopup(`<b>${DEFAULT_LOC.name}</b>`).openPopup();
   map.on('click', function(e) {
+    clearBoundary();
     marker.setLatLng(e.latlng);
     marker.setPopupContent(`📍 ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`).openPopup();
     fetchWeather(e.latlng.lat, e.latlng.lng, `Vị trí (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)})`);
@@ -415,129 +268,97 @@ function initMap() {
   });
 }
 
-// ========== TÌM KIẾM TÙY CHỈNH ==========
+function setMapType(type) {
+  if(type === currentLayer) return;
+  map.removeLayer(TILELAYERS[currentLayer]);
+  currentLayer = type;
+  TILELAYERS[currentLayer].addTo(map);
+  document.getElementById('btn-sat').classList.toggle('active', type==='satellite');
+  document.getElementById('btn-road').classList.toggle('active', type==='roadmap');
+}
+
+function onProvinceChange() {
+  const p = document.getElementById('province-select').value;
+  if(!p || !PROVINCE_BOUNDARIES[p]) return;
+  clearBoundary();
+  const bounds = PROVINCE_BOUNDARIES[p];
+  const coords = bounds.map(c => [c[1], c[0]]);
+  currentBoundary = L.polygon(coords, {color:'#fbbf24',weight:3,fillColor:'#fbbf24',fillOpacity:0.15,dashArray:'5 5'}).addTo(map);
+  currentBoundary.bindPopup(`<b>${p}</b><br>Ranh giới hành chính`);
+  map.fitBounds(currentBoundary.getBounds(), {padding:[20,20]});
+  const center = currentBoundary.getBounds().getCenter();
+  fetchWeather(center.lat, center.lng, p);
+}
+
+function clearBoundary() {
+  if(currentBoundary) { map.removeLayer(currentBoundary); currentBoundary = null; }
+}
+
 async function searchCustom() {
   const q = document.getElementById('search-input').value.trim();
   if(!q) return alert('Vui lòng nhập địa điểm cần tìm!');
-  showLoading(true);
+  showLoading(true);clearBoundary();
   try {
-    // Thử tìm trong dữ liệu local trước
-    for(const prov of Object.keys(ADMIN_DATA)) {
+    for(const prov of Object.keys(PROVINCE_BOUNDARIES)) {
       if(prov.toLowerCase().includes(q.toLowerCase())) {
-        const dist = Object.keys(ADMIN_DATA[prov])[0];
-        const comm = Object.keys(ADMIN_DATA[prov][dist])[0];
-        const loc = ADMIN_DATA[prov][dist][comm];
-        map.setView([loc.lat,loc.lon],10);
-        marker.setLatLng([loc.lat,loc.lon]);
-        fetchWeather(loc.lat,loc.lon,`${comm}, ${dist}, ${prov}`);
-        return;
+        document.getElementById('province-select').value = prov;
+        onProvinceChange(); return;
       }
     }
-    // Gọi API geocoding
     const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=3&language=vi&format=json`);
     const data = await res.json();
-    if(!data.results || data.results.length === 0) {
-      hideLoading();
-      showError('Không tìm thấy địa điểm "' + q + '". Vui lòng thử tên khác.');
-      return;
-    }
+    if(!data.results || data.results.length === 0) { hideLoading(); alert('Không tìm thấy địa điểm. Vui lòng thử tên khác.'); return; }
     const loc = data.results[0];
     const displayName = loc.name + (loc.admin1 ? ', ' + loc.admin1 : '') + (loc.country ? ', ' + loc.country : '');
     map.setView([loc.latitude,loc.longitude],10);
     marker.setLatLng([loc.latitude,loc.longitude]);
     fetchWeather(loc.latitude, loc.longitude, displayName);
-  } catch(err) {
-    hideLoading();
-    showError('Lỗi kết nối. Vui lòng thử lại.');
-  }
+  } catch(err) { hideLoading(); alert('Lỗi kết nối. Vui lòng thử lại.'); }
 }
-
 document.getElementById('search-input').addEventListener('keypress', e => { if(e.key==='Enter') searchCustom(); });
 
-// ========== VỊ TRÍ NGƯỜI DÙNG ==========
 function getUserLocation() {
   if(!navigator.geolocation) return alert('Trình duyệt không hỗ trợ định vị');
-  showLoading(true);
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      map.setView([pos.coords.latitude,pos.coords.longitude],12);
-      marker.setLatLng([pos.coords.latitude,pos.coords.longitude]);
-      fetchWeather(pos.coords.latitude, pos.coords.longitude, '📍 Vị trí của bạn');
-    },
-    err => { hideLoading(); alert('Không thể lấy vị trí: ' + err.message); },
-    {enableHighAccuracy:true}
-  );
+  showLoading(true);clearBoundary();
+  navigator.geolocation.getCurrentPosition(pos => {
+    map.setView([pos.coords.latitude,pos.coords.longitude],12);
+    marker.setLatLng([pos.coords.latitude,pos.coords.longitude]);
+    fetchWeather(pos.coords.latitude, pos.coords.longitude, '📍 Vị trí của bạn');
+  }, err => { hideLoading(); alert('Không thể lấy vị trí: ' + err.message); }, {enableHighAccuracy:true});
 }
 
-// ========== FETCH THỜI TIẾT ĐA NGUỒN ==========
 const MODELS = [
-  {name:'ECMWF',key:'ecmwf_ifs025',color:'#22c55e'},
-  {name:'GFS',key:'gfs_global',color:'#3b82f6'},
-  {name:'CMA',key:'cma_seamless',color:'#f59e0b'},
-  {name:'ICON',key:'icon_seamless',color:'#ef4444'}
+  {name:'ECMWF',key:'ecmwf_ifs025',color:'#22c55e'},{name:'GFS',key:'gfs_global',color:'#3b82f6'},
+  {name:'CMA',key:'cma_seamless',color:'#f59e0b'},{name:'ICON',key:'icon_seamless',color:'#ef4444'}
 ];
 
 async function fetchWeather(lat, lon, locName) {
-  showLoading(true);
-  hideError();
-  
-  const urls = MODELS.map(m => 
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,rain_sum,wind_speed_10m_max&timezone=Asia/Ho_Chi_Minh&forecast_days=8&models=${m.key}`
-  );
-  
+  showLoading(true); hideError();
+  const urls = MODELS.map(m => `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia/Ho_Chi_Minh&forecast_days=8&models=${m.key}`);
   try {
     const results = await Promise.allSettled(urls.map(u => fetch(u).then(r => r.json())));
     const valid = results.filter(r => r.status === 'fulfilled' && r.value && r.value.current).map(r => r.value);
-    
-    if(valid.length === 0) {
-      hideLoading();
-      showError('Không thể lấy dữ liệu từ bất kỳ nguồn nào. Vui lòng thử lại sau.');
-      return;
-    }
-    
-    // Tính toán thống kê
+    if(valid.length === 0) { hideLoading(); alert('Không thể lấy dữ liệu. Vui lòng thử lại.'); return; }
     const avg = arr => Math.round(arr.reduce((a,b)=>a+b,0)/arr.length * 10)/10;
-    const max = arr => Math.max(...arr);
-    const min = arr => Math.min(...arr);
     const mode = arr => { const c = {}; arr.forEach(v=>c[v]=(c[v]||0)+1); return parseInt(Object.keys(c).sort((a,b)=>c[b]-c[a])[0]); };
-    
-    const current = {
-      temp: avg(valid.map(v=>v.current.temperature_2m)),
-      feels: avg(valid.map(v=>v.current.apparent_temperature)),
-      humidity: avg(valid.map(v=>v.current.relative_humidity_2m)),
-      wind: avg(valid.map(v=>v.current.wind_speed_10m)),
-      rain: avg(valid.map(v=>v.current.precipitation || 0)),
-      code: mode(valid.map(v=>v.current.weather_code)),
+    const cur = {
+      temp: avg(valid.map(v=>v.current.temperature_2m)),feels: avg(valid.map(v=>v.current.apparent_temperature)),
+      humidity: avg(valid.map(v=>v.current.relative_humidity_2m)),wind: avg(valid.map(v=>v.current.wind_speed_10m)),
+      rain: avg(valid.map(v=>v.current.precipitation || 0)),code: mode(valid.map(v=>v.current.weather_code)),
       pressure: avg(valid.map(v=>v.current.surface_pressure)),
-      sources: valid.length,
-      modelBreakdown: valid.map((v,i) => ({name: MODELS[i%MODELS.length].name, temp: v.current.temperature_2m}))
+      uv: valid[0].hourly?.uv_index ? avg(valid.map(v=>v.hourly.uv_index[new Date().getHours()]||0)) : '--'
     };
-    
-    // UV index từ hourly gần nhất
-    const hourIdx = new Date().getHours();
-    current.uv = valid[0].hourly.uv_index ? avg(valid.map(v=>v.hourly.uv_index[hourIdx]||0)) : '--';
-    
-    // 7 ngày forecast (loại ngày hôm nay index 0, lấy 7 ngày tiếp theo)
     const daily = valid[0].daily.time.slice(0,8).map((t,i) => ({
-      date: t,
-      code: mode(valid.map(v=>v.daily.weather_code[i])),
-      min: avg(valid.map(v=>v.daily.temperature_2m_min[i])),
-      max: avg(valid.map(v=>v.daily.temperature_2m_max[i])),
-      rain: avg(valid.map(v=>v.daily.precipitation_sum[i]))
+      date:t, code:mode(valid.map(v=>v.daily.weather_code[i])),
+      min:avg(valid.map(v=>v.daily.temperature_2m_min[i])),max:avg(valid.map(v=>v.daily.temperature_2m_max[i])),
+      rain:avg(valid.map(v=>v.daily.precipitation_sum[i]))
     }));
-    
-    renderWeather(current, daily, locName, lat, lon);
-  } catch(err) {
-    hideLoading();
-    showError('Lỗi xử lý dữ liệu: ' + err.message);
-  }
+    renderWeather(cur, daily, locName, lat, lon);
+  } catch(err) { hideLoading(); showError(err.message); }
 }
 
-// ========== RENDER GIAO DIỆN ==========
 function renderWeather(cur, daily, locName, lat, lon) {
   hideLoading();
-  
-  // Current weather
   document.getElementById('current-section').style.display = 'grid';
   document.getElementById('loc-display').textContent = locName;
   const wmo = WMO[cur.code] || {vi:"Không xác định",icon:"🌡️"};
@@ -545,63 +366,32 @@ function renderWeather(cur, daily, locName, lat, lon) {
   document.getElementById('main-temp').innerHTML = Math.round(cur.temp) + '<span>°C</span>';
   document.getElementById('main-desc').textContent = wmo.vi;
   document.getElementById('feels-like').textContent = Math.round(cur.feels);
-  
   document.getElementById('d-humidity').textContent = Math.round(cur.humidity) + '%';
   document.getElementById('d-wind').textContent = Math.round(cur.wind) + ' km/h';
   document.getElementById('d-rain').textContent = (cur.rain||0).toFixed(1) + ' mm';
   document.getElementById('d-uv').textContent = cur.uv;
   document.getElementById('d-pressure').textContent = Math.round(cur.pressure) + ' hPa';
-  
-  // Sources bar
   document.getElementById('sources-bar').style.display = 'flex';
-  
-  // 7 day forecast
   document.getElementById('forecast-section').style.display = 'block';
-  const grid = document.getElementById('forecast-grid');
-  grid.innerHTML = '';
-  
+  const grid = document.getElementById('forecast-grid'); grid.innerHTML = '';
   const today = new Date().getDate();
-  
   daily.forEach((d, i) => {
-    const dt = new Date(d.date);
-    const isToday = dt.getDate() === today && i === 0;
+    const dt = new Date(d.date);const isToday = dt.getDate() === today && i === 0;
     const wmoDay = WMO[d.code] || {vi:"--",icon:"🌡️"};
-    const dayName = dt.toLocaleDateString('vi-VN', {weekday:'short'});
-    const dateStr = dt.toLocaleDateString('vi-VN', {day:'2-digit',month:'2-digit'});
-    
     const card = document.createElement('div');
     card.className = 'forecast-card' + (isToday ? ' today' : '');
-    card.innerHTML = `
-      <div class="day">${isToday ? '🔵 Hôm nay' : dayName}</div>
-      <div class="date">${dateStr}</div>
-      <div class="icon">${wmoDay.icon}</div>
-      <div class="high">${Math.round(d.max)}°C</div>
-      <div class="low">${Math.round(d.min)}°C</div>
-      <div class="rain">💧 ${(d.rain||0).toFixed(1)} mm</div>
-    `;
+    card.innerHTML = `<div class="day">${isToday ? '🔵 Hôm nay' : dt.toLocaleDateString('vi-VN',{weekday:'short'})}</div><div class="date">${dt.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit'})}</div><div class="icon">${wmoDay.icon}</div><div class="high">${Math.round(d.max)}°C</div><div class="low">${Math.round(d.min)}°C</div><div class="rain">💧 ${(d.rain||0).toFixed(1)} mm</div>`;
     grid.appendChild(card);
   });
-  
-  // Update marker
   marker.setLatLng([lat, lon]);
   marker.setPopupContent(`<b>${locName}</b><br>🌡️ ${Math.round(cur.temp)}°C - ${wmo.vi}`);
 }
 
-// ========== UTILS ==========
-function showLoading(show) {
-  document.getElementById('loading').classList.toggle('show', show);
-}
+function showLoading(show) { document.getElementById('loading').classList.toggle('show', show); }
 function hideLoading() { showLoading(false); }
-function showError(msg) {
-  hideLoading();
-  document.getElementById('weather-content').innerHTML = `<div class="error-msg">⚠️ ${msg}</div>`;
-}
-function hideError() {
-  const err = document.querySelector('.error-msg');
-  if(err) err.remove();
-}
+function showError(msg) { hideLoading(); document.getElementById('weather-content').innerHTML = `<div class="error-msg">⚠️ Lỗi: ${msg}</div>`; }
+function hideError() { const err = document.querySelector('.error-msg'); if(err) err.remove(); }
 
-// ========== KHỞI TẠO ==========
 initMap();
 fetchWeather(DEFAULT_LOC.lat, DEFAULT_LOC.lon, DEFAULT_LOC.name);
 </script>
